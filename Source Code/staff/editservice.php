@@ -3,7 +3,7 @@ session_start();
 include('../dbconnection.php');
 
 // Check if the user is logged in
-if (!isset($_SESSION['name'])) {
+if (!isset($_SESSION['loggedin'])) {
     header("Location: login.php");
     exit();
 }
@@ -87,6 +87,7 @@ if ($result->num_rows > 0) {
                             <ul class="nav flex-column sub-menu">
                                 <li class="nav-item"> <a class="nav-link" href="addservice.php">Add Service</a></li>
                                 <li class="nav-item"> <a class="nav-link" href="editservice.php">Edit Service</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="viewservice.php">View Service</a></li>
                             </ul>
                         </div>
                     </li>
@@ -105,14 +106,10 @@ if ($result->num_rows > 0) {
                 <div class="content-wrapper">
                     <div class="row">
                         <div class="col-md-12 grid-margin">
-                            <div class="row">
-                                <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                                    <h3 class="font-weight-bold">Service</h3>
-                                </div>
-                            </div>
+                            <h3 class="font-weight-bold">Service</h3>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <!-- Edit Form -->
                         <div class="col-8 grid-margin stretch-card">
@@ -193,52 +190,9 @@ if ($result->num_rows > 0) {
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Service List -->
-                        <div class="col-md-8 grid-margin stretch-card">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h4 class="card-title">Service List</h4>
-                                    <div class="table-responsive pt-3">
-                                        <table class="table table-bordered">
-                                            <thead>
-                                                <tr>
-                                                    <th style="text-align: center;">#</th>
-                                                    <th style="text-align: center;">Name</th>
-                                                    <th style="text-align: center;">Description</th>
-                                                    <th style="text-align: center;">Price</th>
-                                                    <th style="text-align: center;">Duration</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php
-                                                include '../dbconnection.php';
-                                                $stmt_list = "SELECT name, description, price, duration FROM additional_service";
-                                                $result = $conn->query($stmt_list);
-
-                                                if ($result->num_rows > 0) {
-                                                    $i = 1;
-                                                    while ($row = $result->fetch_assoc()) {
-                                                        echo "<tr>
-                                                            <td style='text-align: center;'>" . $i++ . "</td>
-                                                            <td>" . htmlspecialchars($row["name"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["description"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["price"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["duration"]) . "</td>
-                                                        </tr>";
-                                                    }
-                                                } else {
-                                                    echo "<tr><td colspan='5'>No services found</td></tr>";
-                                                }
-                                                ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
+                <footer class="footer"></footer>
             </div>
         </div>
     </div>
@@ -249,8 +203,8 @@ if ($result->num_rows > 0) {
         document.getElementById('Name').addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const description = selectedOption.getAttribute('data-description');
-            const price = selectedOption.getAttribute('data-price');
-            const duration = selectedOption.getAttribute('data-duration');
+            const price = selectedOption.getAttribute('data-price').replace('RM', '').trim();
+            const duration = selectedOption.getAttribute('data-duration').replace('hour', '').trim();
             const serviceId = selectedOption.value;
 
             // Fill in the other fields

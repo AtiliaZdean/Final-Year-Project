@@ -29,7 +29,7 @@
               <div class="brand-logo">
                 <img src="..\images\HygieaHub logo.png" alt="Hygieia logo">
               </div>
-              <h4>Log In</h4>
+              <h4>Sign In</h4>
               <form class="pt-3" method="POST" action="dbconnection\dblogin.php">
                 
                 <!-- Email -->
@@ -53,12 +53,12 @@
 
                 <!-- Log in button -->
                 <div class="mt-3">
-                  <button class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" type="submit">Log In</button>
+                  <button class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" type="submit">Sign In</button>
                 </div>
 
                 <!-- Sign up navigation -->
                 <div class="text-center mt-4 font-weight-light">
-                  Doesn't have an account? <a href="register.php" class="text-primary">Register</a>
+                  Doesn't have an account? <a href="register.php" class="text-primary">Sign Up</a>
                 </div>
               </form>
             </div>

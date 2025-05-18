@@ -2,7 +2,7 @@
 session_start();
 
 // Check if the user is logged in
-if (!isset($_SESSION['name'])) {
+if (!isset($_SESSION['loggedin'])) {
     header("Location: login.php");
     exit();
 }
@@ -76,6 +76,7 @@ if (!isset($_SESSION['name'])) {
                             <ul class="nav flex-column sub-menu">
                                 <li class="nav-item"> <a class="nav-link" href="addservice.php">Add Service</a></li>
                                 <li class="nav-item"> <a class="nav-link" href="editservice.php">Edit Service</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="viewservice.php">View Service</a></li>
                             </ul>
                         </div>
                     </li>
@@ -94,15 +95,12 @@ if (!isset($_SESSION['name'])) {
                 <div class="content-wrapper">
                     <div class="row">
                         <div class="col-md-12 grid-margin">
-                            <div class="row">
-                                <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                                    <h3 class="font-weight-bold">Service</h3>
-                                </div>
-                            </div>
+                            <h3 class="font-weight-bold">Service</h3>
                         </div>
                     </div>
-                    
+
                     <div class="row">
+                        <!-- Add Form -->
                         <div class="col-8 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
@@ -173,6 +171,7 @@ if (!isset($_SESSION['name'])) {
                         </div>
                     </div>
                 </div>
+                <footer class="footer"></footer>
             </div>
         </div>
     </div>
