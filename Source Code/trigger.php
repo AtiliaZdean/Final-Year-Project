@@ -14,7 +14,7 @@ BEFORE INSERT ON additional_service
 FOR EACH ROW
 BEGIN
     -- Check if the service name already exists
-    IF EXISTS (SELECT 1 FROM additional_service WHERE name = NEW.name) THEN
+    IF EXISTS (SELECT 1 FROM additional_service WHERE LOWER(name) = LOWER(NEW.name)) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Service name already exists.';
     END IF;
 END;
