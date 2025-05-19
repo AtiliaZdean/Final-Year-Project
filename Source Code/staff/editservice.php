@@ -98,6 +98,13 @@ if ($result->num_rows > 0) {
                             <span class="menu-title">Manage Staff Account</span>
                         </a>
                     </li>
+
+                    <!-- Maintenance -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="maintenance.php">
+                            <span class="menu-title">Maintenance</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
