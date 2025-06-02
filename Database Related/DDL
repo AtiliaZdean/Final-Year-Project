@@ -20,8 +20,7 @@ CREATE TABLE STAFF (
   branch VARCHAR(100) NOT NULL,
   role VARCHAR(7) NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  status VARCHAR(9) DEFAULT 'active' NOT NULL,
-  cleaner_picture VARCHAR(255)
+  status VARCHAR(9) DEFAULT 'active' NOT NULL
 );
 
 CREATE TABLE ADDITIONAL_SERVICE (
@@ -35,11 +34,11 @@ CREATE TABLE ADDITIONAL_SERVICE (
 CREATE TABLE BOOKING (
   booking_id INT(11) AUTO_INCREMENT PRIMARY KEY,
   customer_id INT(11) NOT NULL,
-  total_area VARCHAR(15) NOT NULL,
+  total_area DECIMAL(20,4) NOT NULL,
   no_of_bedrooms INT(2) NOT NULL,
   no_of_bathrooms INT(2) NOT NULL,
   no_of_livingroooms INT(2) NOT NULL,
-  size_of_kitchen VARCHAR(15) NOT NULL,
+  size_of_kitchen DECIMAL(20,4) NOT NULL,
   pet VARCHAR(3) NOT NULL,
   no_of_cleaners INT(2) NOT NULL,
   custom_request VARCHAR(300),
@@ -54,7 +53,6 @@ CREATE TABLE BOOKING (
 CREATE TABLE BOOKING_SERVICE (
   booking_id INT(11) NOT NULL,
   service_id INT(11) NOT NULL,
-  quantity INT(2),
   PRIMARY KEY (booking_id, service_id),
   FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id),
   FOREIGN KEY (service_id) REFERENCES ADDITIONAL_SERVICE(service_id)
