@@ -7,9 +7,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = $_POST['Name'];
     $description = $_POST['Description'];
     $price = $_POST['Price'];
-    $price = 'RM ' . $price;
     $duration = $_POST['Duration'];
-    $duration = $duration . ' hour';
     $staff = $_SESSION['name'];
 
     $conn->query("SET @made_by = '$staff'");
@@ -17,7 +15,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     try {
         // Insert data into additional_service table
         $stmt_insert = $conn->prepare(
-            "INSERT INTO additional_service (name, description, price, duration)
+            "INSERT INTO additional_service (name, description, price_RM, duration_hour)
              VALUES (?, ?, ?, ?)"
         );
         $stmt_insert->bind_param("ssss", $name, $description, $price, $duration);
@@ -36,6 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt_insert->close();
     } catch (Exception $e) {
         $_SESSION['EmailMessage'] = ' Error: ' . $e->getMessage();
+        file_put_contents('error_log.txt', $e->getMessage(), FILE_APPEND);
         header("Location: ../addservice.php");
         exit;
     }

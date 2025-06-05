@@ -7,7 +7,7 @@ $email = $_POST['Email'];
 $password = $_POST['Password'];
 
 // Find the data of user
-$sql = "SELECT staff_id, name, password, status FROM staff WHERE email = ?";
+$sql = "SELECT staff_id, name, password, branch, status FROM staff WHERE email = ?";
 $stmt_select = $conn->prepare($sql);
 $stmt_select->bind_param("s", $email);
 $stmt_select->execute();
@@ -21,7 +21,7 @@ if ($stmt_select->num_rows == 0) {
     header("Location: ../login.php");
     exit();
 } else {
-    $stmt_select->bind_result($staff_id, $name, $stored_password, $status);
+    $stmt_select->bind_result($staff_id, $name, $stored_password, $branch, $status);
     $stmt_select->fetch();
 
     if (password_verify($password, $stored_password)) {
@@ -36,9 +36,9 @@ if ($stmt_select->num_rows == 0) {
         // Successful login - call stored procedure to log the activity
         $conn->query("CALL ManageStaff('login', $staff_id, '$name', '', '', '', '', '', '', '$name', @result)");
 
-        $_SESSION['loggedin'] = true;
         $_SESSION['staff_id'] = $staff_id;
         $_SESSION['name'] = $name;
+        $_SESSION['branch'] = $branch;
 
         header("Location: ../dashboard.php");
         exit();
