@@ -9242,7 +9242,6 @@ pre code {
   align-items: center; 
 }
 
-
 .no-gutters {
   margin-right: 0;
   margin-left: 0;
@@ -10556,7 +10555,7 @@ pre code {
 .jsgrid .jsgrid-table .jsgrid-filter-row select[readonly], .jsgrid .jsgrid-table .jsgrid-filter-row input[readonly][type=number], .select2-container--default .select2-selection--single[readonly], .select2-container--default .select2-selection--single .select2-search__field[readonly], .typeahead[readonly],
 .tt-query[readonly],
 .tt-hint[readonly] {
-  background-color: #e9ecef;
+  background-color: #fff;
   opacity: 1;
 }
 
@@ -13813,6 +13812,24 @@ input[type="button"].btn-block {
   background-clip: border-box;
   border: 1px solid #e3e3e3;
   border-radius: 20px;
+}
+
+.card-collapsible {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.card-content {
+  display: none;
+  overflow: hidden;
+}
+
+.card-content.show {
+  display: block;
+}
+
+.card-transparent {
+  background-color: transparent;
 }
 
 .card > hr {
@@ -24637,6 +24654,7 @@ dl li {
   border-bottom-width: 1px;
   font-weight: 600;
   font-size: .875rem;
+  text-align: center;
 }
 
 .table thead th i, .jsgrid .jsgrid-table thead th i {
