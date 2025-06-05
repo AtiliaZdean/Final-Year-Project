@@ -2,7 +2,7 @@
 session_start();
 
 // Check if the user is logged in
-if (!isset($_SESSION['loggedin'])) {
+if (!isset($_SESSION['staff_id'])) {
   header("Location: login.php");
   exit();
 }
@@ -85,6 +85,13 @@ if (!isset($_SESSION['loggedin'])) {
           <li class="nav-item">
             <a class="nav-link" href="managestaff.php">
               <span class="menu-title">Manage Staff Account</span>
+            </a>
+          </li>
+
+          <!-- Manage Booking -->
+          <li class="nav-item">
+            <a class="nav-link" href="managebooking.php">
+              <span class="menu-title">Manage Booking</span>
             </a>
           </li>
 

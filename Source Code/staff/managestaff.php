@@ -3,7 +3,7 @@ session_start();
 include('../dbconnection.php');
 
 // Check if the user is logged in
-if (!isset($_SESSION['loggedin'])) {
+if (!isset($_SESSION['staff_id'])) {
     header("Location: login.php");
     exit();
 }
@@ -89,6 +89,13 @@ if (!isset($_SESSION['loggedin'])) {
                         </a>
                     </li>
 
+                    <!-- Manage Booking -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="managebooking.php">
+                            <span class="menu-title">Manage Booking</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -109,51 +116,32 @@ if (!isset($_SESSION['loggedin'])) {
 
                     <!-- Filtering -->
                     <div class="row">
-                        <div class="col-md-12 grid-margin">
-                            <form class="form-inline" method="POST">
-                                <!-- By role -->
-                                <div class="form-group col-sm-3 mb-1">
-                                    <label for="Role" class="col-sm col-form-label">Role :</label>
-                                    <select class="form-control form-control-sm" name="Role" id="Role" onchange="changeInputColor()">
-                                        <option value="" disabled selected>Role</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="cleaner">Cleaner</option>
-                                    </select>
-                                </div>
+                        <div class="col-md-12 grid-margin stretch-card">
+                            <div class="card card-transparent">
+                                <div class="card-body">
+                                    <form class="form-inline" method="POST">
+                                        <label class="mr-3">Search by :</label>
 
-                                <!-- By branch -->
-                                <div class="form-group col-sm-3 mb-1">
-                                    <label for="Branch" class="col-sm col-form-label">Branch :</label>
-                                    <select class="form-control form-control-sm" name="Branch" id="Branch" onchange="changeInputColor()">
-                                        <option value="" disabled selected>Branch</option>
-                                        <?php
-                                        $stmt_branch_select = "SELECT DISTINCT branch FROM staff";
-                                        $branch_result = $conn->query($stmt_branch_select);
-                                        if ($branch_result && $branch_result->num_rows > 0) {
-                                            while ($branch_row = $branch_result->fetch_assoc()) {
-                                                echo "<option value='" . htmlspecialchars($branch_row['branch']) . "'>" . htmlspecialchars($branch_row['branch']) . "</option>";
-                                            }
-                                        }
-                                        ?>
-                                    </select>
-                                </div>
+                                        <!-- By role -->
+                                        <select class="form-control form-control-sm mr-3" name="Role" id="Role" onchange="changeInputColor()">
+                                            <option value="" disabled selected>Role</option>
+                                            <option value="Admin">Admin</option>
+                                            <option value="Cleaner">Cleaner</option>
+                                        </select>
 
-                                <!-- By status -->
-                                <div class="form-group col-sm-3 mb-1">
-                                    <label for="Status" class="col-sm col-form-label">Status :</label>
-                                    <select class="form-control form-control-sm" name="Status" id="Status" onchange="changeInputColor()">
-                                        <option value="" disabled selected>Status</option>
-                                        <option value="active">Active</option>
-                                        <option value="in-active">In-active</option>
-                                    </select>
-                                </div>
+                                        <!-- By status -->
+                                        <select class="form-control form-control-sm mr-4" name="Status" id="Status" onchange="changeInputColor()">
+                                            <option value="" disabled selected>Status</option>
+                                            <option value="Active">Active</option>
+                                            <option value="In-Active">In-active</option>
+                                        </select>
 
-                                <!-- Buttons -->
-                                <div class="form-group col-sm-3 mb-1">
-                                    <button type="submit" class="btn btn-dark mr-2 btn-sm">Done</button>
-                                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="resetFilters()">Reset</button>
+                                        <!-- Buttons -->
+                                        <button type="submit" class="btn btn-primary btn-sm mr-3">Done</button>
+                                        <button type="button" class="btn btn-light btn-sm" onclick="resetFilters()">Reset</button>
+                                    </form>
                                 </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
 
@@ -173,9 +161,7 @@ if (!isset($_SESSION['loggedin'])) {
                                                     <th style="text-align: center;">Phone No.</th>
                                                     <th style="text-align: center;">Branch</th>
                                                     <th style="text-align: center;">Role</th>
-                                                    <th style="text-align: center;">Date Registered</th>
                                                     <th style="text-align: center;">Status</th>
-                                                    <th style="text-align: center;">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -183,41 +169,46 @@ if (!isset($_SESSION['loggedin'])) {
                                                 include '../dbconnection.php';
 
                                                 $role = isset($_POST['Role']) ? $_POST['Role'] : '';
-                                                $branch = isset($_POST['Branch']) ? $_POST['Branch'] : '';
                                                 $status = isset($_POST['Status']) ? $_POST['Status'] : '';
+                                                $conn->query("SET @current_user_branch = '" . $conn->real_escape_string($_SESSION['branch']) . "'");
 
                                                 // Make condition for the SQL query based on filters
-                                                $stmt_list = "SELECT * FROM staff WHERE 1=1"; // Start with a base query
+                                                $stmt_list = "SELECT s.*, sl.made_at, sl.made_by FROM branch_staff s 
+                                                                LEFT JOIN (SELECT sl1.*
+                                                                FROM staff_log sl1
+                                                                INNER JOIN (
+                                                                    SELECT staff_id, MAX(made_at) AS latest_log
+                                                                    FROM staff_log
+                                                                    WHERE action='Update'
+                                                                    GROUP BY staff_id
+                                                                    ) sl2 ON sl1.staff_id = sl2.staff_id AND sl1.made_at = sl2.latest_log
+                                                                ) sl ON s.staff_id = sl.staff_id
+                                                                WHERE 1=1"; // Start with a base query
                                                 if (!empty($role)) {
                                                     $stmt_list .= " AND role = '" . $conn->real_escape_string($role) . "'";
-                                                }
-                                                if (!empty($branch)) {
-                                                    $stmt_list .= " AND branch = '" . $conn->real_escape_string($branch) . "'";
                                                 }
                                                 if (!empty($status)) {
                                                     $stmt_list .= " AND status = '" . $conn->real_escape_string($status) . "'";
                                                 }
                                                 $result = $conn->query($stmt_list);
 
+                                                echo "<tr><td colspan='7'>" . $result->num_rows . " rows returned</td></tr>";
                                                 if ($result->num_rows > 0) {
-                                                    $i = 1;
                                                     while ($row = $result->fetch_assoc()) {
                                                         echo "<tr>
-                                                            <td style='text-align: center;'>" . $i++ . "</td>
+                                                            <td style='text-align: center;'>
+                                                                <a class='ti-pencil-alt text-primary' style='text-decoration: none;' onclick=\"openModal('edit', '" . htmlspecialchars($row['staff_id']) . "', '" . htmlspecialchars($row['name']) . "', '" . htmlspecialchars($row['phone_number']) . "', '" . htmlspecialchars($row['branch']) . "', '" . htmlspecialchars($row['role']) . "', '" . htmlspecialchars($row['status']) . "', '" . htmlspecialchars($row['made_at']) . "', '" . htmlspecialchars($row['made_by']) . "')\"></a>
+                                                            </td>
                                                             <td>" . htmlspecialchars($row["name"]) . "</td>
                                                             <td>" . htmlspecialchars($row["email"]) . "</td>
                                                             <td>" . htmlspecialchars($row["phone_number"]) . "</td>
                                                             <td>" . htmlspecialchars($row["branch"]) . "</td>
                                                             <td>" . htmlspecialchars($row["role"]) . "</td>
-                                                            <td>" . htmlspecialchars(date('d-m-Y', strtotime($row["created_at"]))) . "</td>
                                                             <td>" . htmlspecialchars($row["status"]) . "</td>
-                                                            <td style='text-align: center;'>
-                                                                <button class='btn btn-dark btn-sm' onclick=\"openModal('edit', '" . htmlspecialchars($row['staff_id']) . "', '" . htmlspecialchars($row['name']) . "', '" . htmlspecialchars($row['phone_number']) . "', '" . htmlspecialchars($row['branch']) . "', '" . htmlspecialchars($row['role']) . "', '" . htmlspecialchars($row['status']) . "')\">Edit</button>
-                                                            </td>
                                                         </tr>";
                                                     }
                                                 } else {
-                                                    echo "<tr><td colspan='9'>No staff found</td></tr>";
+                                                    echo "<tr><td colspan='7'>No staff found</td></tr>";
                                                 }
                                                 ?>
                                             </tbody>
@@ -270,36 +261,50 @@ if (!isset($_SESSION['loggedin'])) {
                                             <label for="Branch">Branch<span class="text-danger"> *</span></label>
                                             <select class="form-control" name="Branch" id="BranchModal" required onchange="changeInputColor()">
                                                 <option value="" disabled selected>Branch</option>
-                                                <?php
-                                                $stmt_branch_select = "SELECT DISTINCT branch FROM staff";
-                                                $branch_result = $conn->query($stmt_branch_select);
-                                                if ($branch_result && $branch_result->num_rows > 0) {
-                                                    while ($branch_row = $branch_result->fetch_assoc()) {
-                                                        echo "<option value='" . htmlspecialchars($branch_row['branch']) . "'>" . htmlspecialchars($branch_row['branch']) . "</option>";
-                                                    }
-                                                }
-                                                ?>
+                                                <!-- Melaka -->
+                                                <option value="Ayer Keroh">Ayer Keroh</option>
+                                                <option value="Batu Berendam">Batu Berendam</option>
+                                                <option value="Bukit Baru">Bukit Baru</option>
+                                                <option value="Melaka City">Melaka City</option>
+                                                <!-- Negeri Sembilan -->
+                                                <option value="Seremban">Seremban</option>
+                                                <option value="Port Dickson">Port Dickson</option>
+                                                <option value="Nilai">Nilai</option>
+                                                <option value="Tampin">Tampin</option>
                                             </select>
                                         </div>
 
                                         <!-- Role -->
-                                        <div class="form-group">
-                                            <label for="Role">Role<span class="text-danger"> *</span></label>
-                                            <select class="form-control" name="Role" id="RoleModal" required onchange="changeInputColor()">
+                                        <div class="form-group" id="roleGroup1">
+                                            <label for="Role1">Role<span class="text-danger"> *</span></label>
+                                            <select class="form-control" name="Role1" id="Role1" required onchange="changeInputColor()">
                                                 <option value="" disabled selected>Role</option>
-                                                <option value="admin">Admin</option>
-                                                <option value="cleaner">Cleaner</option>
+                                                <option value="Admin">Admin</option>
+                                                <option value="Cleaner">Cleaner</option>
                                             </select>
+                                        </div>
+
+                                        <!-- Role for edit -->
+                                        <div class="form-group" id="roleGroup2" style="display: none;">
+                                            <label for="Role2">Role</label>
+                                            <input type="text" class="form-control" name="Role2" id="Role2" readonly>
                                         </div>
 
                                         <!-- Status -->
                                         <div class="form-group" id="statusGroup">
                                             <label for="Status">Status<span class="text-danger"> *</span></label>
-                                            <select class="form-control" name="Status" id="StatusModal" onchange="changeInputColor()">
+                                            <select class="form-control" name="StatusModal" id="StatusModal" onchange="changeInputColor()">
                                                 <option value="" disabled selected>Status</option>
-                                                <option value="active">Active</option>
-                                                <option value="in-active">In-Active</option>
+                                                <option value="Active">Active</option>
+                                                <option value="In-Active">In-Active</option>
                                             </select>
+                                        </div>
+
+                                        <!-- Latest Update Information -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <small id="latestUpdate" class="text-muted">No updates made.</small>
+                                            </div>
                                         </div>
 
                                         <!-- Buttons -->
@@ -342,7 +347,6 @@ if (!isset($_SESSION['loggedin'])) {
         // Reset all filter dropdowns to their default state
         function resetFilters() {
             document.getElementById('Role').selectedIndex = 0;
-            document.getElementById('Branch').selectedIndex = 0;
             document.getElementById('Status').selectedIndex = 0;
 
             changeInputColor();
@@ -357,19 +361,27 @@ if (!isset($_SESSION['loggedin'])) {
             }
         });
 
-        function openModal(action, id = '', name = '', phone = '', branch = '', role = '', status = '') {
+        function openModal(action, id = '', name = '', phone = '', branch = '', role = '', status = '', lastUpdateTime = '', lastUpdatedBy = '') {
             const modalTitle = document.getElementById('staffModalLabel');
             const emailGroup = document.getElementById('emailGroup');
+            const rolelGroup1 = document.getElementById('roleGroup1');
+            const rolelGroup2 = document.getElementById('roleGroup2');
             const passwordGroup = document.getElementById('passwordGroup');
             const statusGroup = document.getElementById('statusGroup');
             const submitButton = document.getElementById('submitButton');
             const nameInput = document.getElementById('Name');
+            const roleSelect = document.getElementById('Role1');
+            const roleText = document.getElementById('Role2');
+            const latestUpdate = document.getElementById('latestUpdate');
 
             if (action === 'edit') {
                 modalTitle.textContent = 'Edit Staff';
                 emailGroup.style.display = 'none'; // Hide email field for edit
+                roleGroup1.style.display = 'none';
+                roleGroup2.style.display = 'block';
                 passwordGroup.style.display = 'none';
                 statusGroup.style.display = 'block';
+                latestUpdate.style.display = 'block';
                 submitButton.textContent = 'Update';
                 submitButton.setAttribute('name', 'update');
 
@@ -380,17 +392,27 @@ if (!isset($_SESSION['loggedin'])) {
                 document.getElementById('PhoneNumber').value = phone;
                 const branchSelect = document.getElementById('BranchModal');
                 branchSelect.value = branch;
-                const roleSelect = document.getElementById('RoleModal');
-                roleSelect.value = role;
+                roleText.value = role;
+                roleText.readOnly = true;
                 const statusSelect = document.getElementById('StatusModal');
                 statusSelect.value = status;
+
+                if (lastUpdatedBy && lastUpdateTime) {
+                    const formattedTime = new Date(lastUpdateTime).toLocaleString();
+                    $('#latestUpdate').text(`Latest update by ${lastUpdatedBy} at ${formattedTime}`);
+                } else {
+                    $('#latestUpdate').text('No updates made.');
+                }
             } else {
                 modalTitle.textContent = 'Register Staff';
                 emailGroup.style.display = 'block'; // Show email field for register
+                roleGroup1.style.display = 'block';
+                roleGroup2.style.display = 'none';
                 passwordGroup.style.display = 'block';
                 statusGroup.style.display = 'none';
                 submitButton.textContent = 'Register';
                 submitButton.setAttribute('name', 'register');
+                latestUpdate.style.display = 'none';
 
                 // Clear fields for new registration
                 nameInput.readOnly = false;
@@ -399,7 +421,6 @@ if (!isset($_SESSION['loggedin'])) {
                 document.getElementById('Email').value = '';
                 document.getElementById('Password').value = '';
                 document.getElementById('Branch').value = '';
-                document.getElementById('Role').value = '';
             }
 
             // Show the modal

@@ -2,7 +2,7 @@
 session_start();
 
 // Check if the user is logged in
-if (!isset($_SESSION['loggedin'])) {
+if (!isset($_SESSION['staff_id'])) {
     header("Location: login.php");
     exit();
 }
@@ -88,6 +88,13 @@ if (!isset($_SESSION['loggedin'])) {
                         </a>
                     </li>
 
+                    <!-- Manage Booking -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="managebooking.php">
+                            <span class="menu-title">Manage Booking</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -108,7 +115,7 @@ if (!isset($_SESSION['loggedin'])) {
 
                     <div class="row">
                         <!-- Service List -->
-                        <div class="col-md-8 grid-margin stretch-card">
+                        <div class="col-md-12 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
                                     <h4 class="card-title">Service List</h4>
@@ -116,7 +123,6 @@ if (!isset($_SESSION['loggedin'])) {
                                         <table class="table table-bordered">
                                             <thead>
                                                 <tr>
-                                                    <th style="text-align: center;">#</th>
                                                     <th style="text-align: center;">Name</th>
                                                     <th style="text-align: center;">Description</th>
                                                     <th style="text-align: center;">Price</th>
@@ -126,22 +132,21 @@ if (!isset($_SESSION['loggedin'])) {
                                             <tbody>
                                                 <?php
                                                 include '../dbconnection.php';
-                                                $stmt_list = "SELECT name, description, price, duration FROM additional_service";
+                                                $stmt_list = "SELECT name, description, price_RM, duration_hour FROM additional_service";
                                                 $result = $conn->query($stmt_list);
 
+                                                echo "<tr><td colspan='4'>" . $result->num_rows . " rows returned</td></tr>";
                                                 if ($result->num_rows > 0) {
-                                                    $i = 1;
                                                     while ($row = $result->fetch_assoc()) {
                                                         echo "<tr>
-                                                            <td style='text-align: center;'>" . $i++ . "</td>
                                                             <td>" . htmlspecialchars($row["name"]) . "</td>
                                                             <td>" . htmlspecialchars($row["description"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["price"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["duration"]) . "</td>
+                                                            <td>RM " . htmlspecialchars($row["price_RM"]) . "</td>
+                                                            <td>" . htmlspecialchars($row["duration_hour"]) . " hour</td>
                                                         </tr>";
                                                     }
                                                 } else {
-                                                    echo "<tr><td colspan='5'>No services found</td></tr>";
+                                                    echo "<tr><td colspan='4'>No services found</td></tr>";
                                                 }
                                                 ?>
                                             </tbody>

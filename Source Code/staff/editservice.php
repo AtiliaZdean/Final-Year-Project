@@ -3,13 +3,22 @@ session_start();
 include('../dbconnection.php');
 
 // Check if the user is logged in
-if (!isset($_SESSION['loggedin'])) {
+if (!isset($_SESSION['staff_id'])) {
     header("Location: login.php");
     exit();
 }
 
 // Fetch services from the database
-$stmt_select = "SELECT service_id, name, description, price, duration FROM additional_service";
+$stmt_select = "SELECT s.service_id, s.name, s.description, s.price_RM, s.duration_hour, sl.made_at, sl.made_by 
+                FROM additional_service s 
+                LEFT JOIN (SELECT sl1.*
+                                FROM additional_service_log sl1
+                                INNER JOIN (SELECT service_id, MAX(made_at) AS latest_log
+                                            FROM additional_service_log
+                                            WHERE action = 'Update'
+                                            GROUP BY service_id
+                                           ) sl2 ON sl1.service_id = sl2.service_id AND sl1.made_at = sl2.latest_log
+                          ) sl ON s.service_id = sl.service_id";
 $result = $conn->query($stmt_select);
 $services = [];
 if ($result->num_rows > 0) {
@@ -99,6 +108,13 @@ if ($result->num_rows > 0) {
                         </a>
                     </li>
 
+                    <!-- Manage Booking -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="managebooking.php">
+                            <span class="menu-title">Manage Booking</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -131,7 +147,7 @@ if ($result->num_rows > 0) {
                                             <select class="form-control" name="Name" id="Name" required onchange="changeInputColor()">
                                                 <option value="" disabled selected hidden>Select a service</option>
                                                 <?php foreach ($services as $service): ?>
-                                                    <option value="<?php echo $service['service_id']; ?>" data-description="<?php echo htmlspecialchars($service['description']); ?>" data-price="<?php echo htmlspecialchars($service['price']); ?>" data-duration="<?php echo htmlspecialchars($service['duration']); ?>">
+                                                    <option value="<?php echo $service['service_id']; ?>" data-description="<?php echo htmlspecialchars($service['description']); ?>" data-price="<?php echo htmlspecialchars($service['price_RM']); ?>" data-duration="<?php echo htmlspecialchars($service['duration_hour']); ?>" data-updated-by="<?php echo htmlspecialchars($service['made_by'] ?? ''); ?>" data-updated-at="<?php echo htmlspecialchars($service['made_at'] ?? ''); ?>">
                                                         <?php echo htmlspecialchars($service['name']); ?>
                                                     </option>
                                                 <?php endforeach; ?>
@@ -191,6 +207,13 @@ if ($result->num_rows > 0) {
                                         }
                                         ?>
 
+                                        <!-- Latest Update Information -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <small id="latestUpdate" class="text-muted" style="display: none;">No updates made.</small>
+                                            </div>
+                                        </div>
+
                                         <button type="submit" name="update" class="btn btn-primary mr-2">Update</button>
                                         <button type="submit" name="delete" class="btn btn-danger mr-2">Delete</button>
                                     </form>
@@ -210,15 +233,30 @@ if ($result->num_rows > 0) {
         document.getElementById('Name').addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const description = selectedOption.getAttribute('data-description');
-            const price = selectedOption.getAttribute('data-price').replace('RM', '').trim();
-            const duration = selectedOption.getAttribute('data-duration').replace('hour', '').trim();
+            const price = selectedOption.getAttribute('data-price');
+            const duration = selectedOption.getAttribute('data-duration');
             const serviceId = selectedOption.value;
+            const updatedBy = selectedOption.getAttribute('data-updated-by');
+            const updatedAt = selectedOption.getAttribute('data-updated-at');
 
             // Fill in the other fields
             document.getElementById('Description').value = description;
             document.getElementById('Price').value = price;
             document.getElementById('Duration').value = duration;
             document.getElementById('service_id').value = serviceId;
+
+            // Show the latest update information
+            const latestUpdateElement = document.getElementById('latestUpdate');
+            latestUpdateElement.style.display = 'block';
+
+            if (updatedBy && updatedAt) {
+                // Format the date properly
+                const date = new Date(updatedAt);
+                const formattedDate = date.toLocaleString();
+                latestUpdateElement.textContent = `Latest update by ${updatedBy} at ${formattedDate}`;
+            } else {
+                latestUpdateElement.textContent = 'No updates made.';
+            }
         });
 
         // Change input font color when selecting

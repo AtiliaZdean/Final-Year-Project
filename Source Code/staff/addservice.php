@@ -2,7 +2,7 @@
 session_start();
 
 // Check if the user is logged in
-if (!isset($_SESSION['loggedin'])) {
+if (!isset($_SESSION['staff_id'])) {
     header("Location: login.php");
     exit();
 }
@@ -88,6 +88,13 @@ if (!isset($_SESSION['loggedin'])) {
                         </a>
                     </li>
 
+                    <!-- Manage Booking -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="managebooking.php">
+                            <span class="menu-title">Manage Booking</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -117,7 +124,7 @@ if (!isset($_SESSION['loggedin'])) {
                                         <!-- Service name -->
                                         <div class="form-group">
                                             <label for="Name">Name<span class="text-danger"> *</span></label>
-                                            <input type="text" class="form-control" name="Name" id="Name" placeholder="Service Name" required pattern="[A-Za-z\s]+" title="Only letters are allowed." oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                                            <input type="text" class="form-control" name="Name" id="Name" placeholder="Service Name" required>
                                         </div>
 
                                         <!-- Description -->
@@ -143,7 +150,7 @@ if (!isset($_SESSION['loggedin'])) {
                                             <div class="input-group">
                                                 <input type="text" class="form-control" name="Duration" id="Duration" maxlength="5" placeholder="Service Duration" required pattern="^\d+(\.\d{1,2})?$" onblur="formatPrice(this)">
                                                 <div class="input-group-prepend">
-                                                    <span class="input-group-text">hour</span>
+                                                    <span class="input-group-text bg-primary text-white">hour</span>
                                                 </div>
                                             </div>
                                         </div>
