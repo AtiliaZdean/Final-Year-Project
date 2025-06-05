@@ -34,9 +34,9 @@ AFTER INSERT ON additional_service
 FOR EACH ROW
 BEGIN
     INSERT INTO additional_service_log(
-        service_id, action, name, new_description, new_price, new_duration, made_by
+        service_id, action, name, new_description, new_price_RM, new_duration_hour, made_by
     ) VALUES (
-        NEW.service_id, 'INSERT', NEW.name, NEW.description, NEW.price, NEW.duration, @made_by
+        NEW.service_id, 'Add', NEW.name, NEW.description, NEW.price_RM, NEW.duration_hour, @made_by
     );
 END;
 ";
@@ -58,15 +58,15 @@ BEGIN
         service_id, action,
         name,
         old_description, new_description,
-        old_price, new_price,
-        old_duration, new_duration,
+        old_price_RM, new_price_RM,
+        old_duration_hour, new_duration_hour,
         made_by
     ) VALUES (
-        OLD.service_id, 'UPDATE',
+        OLD.service_id, 'Update',
         OLD.name,
         OLD.description, NEW.description,
-        OLD.price, NEW.price,
-        OLD.duration, NEW.duration,
+        OLD.price_RM, NEW.price_RM,
+        OLD.duration_hour, NEW.duration_hour,
         @made_by
     );
 END;
@@ -86,9 +86,9 @@ AFTER DELETE ON additional_service
 FOR EACH ROW
 BEGIN
     INSERT INTO additional_service_log(
-        service_id, action, name, old_description, old_price, old_duration, made_by
+        service_id, action, name, old_description, old_price_RM, old_duration_hour, made_by
     ) VALUES (
-        OLD.service_id, 'DELETE', OLD.name, OLD.description, OLD.price, OLD.duration, @made_by
+        OLD.service_id, 'Delete', OLD.name, OLD.description, OLD.price_RM, OLD.duration_hour, @made_by
     );
 END;
 ";

@@ -55,7 +55,7 @@ BEGIN
             staff_id, action, made_at, made_by, name, new_email, new_phone_number, new_branch, new_role, new_status
         )
         VALUES (
-            LAST_INSERT_ID(), 'insert', NOW(), p_made_by, p_name, p_email, p_phone_number, p_branch, p_role, 'active'
+            LAST_INSERT_ID(), 'Register', NOW(), p_made_by, p_name, p_email, p_phone_number, p_branch, p_role, 'Active'
         );
         
         SET p_result = 1;
@@ -74,16 +74,15 @@ BEGIN
             email = p_email,
             phone_number = p_phone_number,
             branch = p_branch,
-            role = p_role,
             status = p_status
         WHERE staff_id = p_staff_id;
         
         -- Log the activity
         INSERT INTO staff_log (
-            staff_id, action, made_at, made_by, name, old_email, old_phone_number, old_branch, old_role, old_status, new_email, new_phone_number, new_branch, new_role, new_status
+            staff_id, action, made_at, made_by, name, old_email, old_phone_number, old_branch, old_role, old_status, new_email, new_phone_number, new_branch, new_status
         )
         VALUES (
-            p_staff_id, 'update', NOW(), p_made_by, p_name, v_old_email, v_old_phone, v_old_branch, v_old_role, v_old_status, p_email, p_phone_number, p_branch, p_role, p_status
+            p_staff_id, 'Update', NOW(), p_made_by, p_name, v_old_email, v_old_phone, v_old_branch, v_old_role, v_old_status, p_email, p_phone_number, p_branch, p_status
         );
         
         SET p_result = 1;
@@ -94,7 +93,7 @@ BEGIN
             staff_id, action, made_at, name, made_by
         )
         VALUES (
-            p_staff_id, 'login', NOW(), p_name, p_made_by
+            p_staff_id, 'Login', NOW(), p_name, p_made_by
         );
         
         SET p_result = 1;
@@ -105,7 +104,7 @@ BEGIN
             staff_id, action, made_at, made_by, old_email, old_status
         )
         VALUES (
-            p_staff_id, 'failed login', NOW(), p_made_by, p_email, p_status
+            p_staff_id, 'Failed Login', NOW(), p_made_by, p_email, p_status
         );
         
         SET p_result = 1;

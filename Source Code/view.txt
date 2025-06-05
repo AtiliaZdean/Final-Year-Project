@@ -1,0 +1,26 @@
+DELIMITER //
+CREATE FUNCTION get_current_branch() 
+RETURNS VARCHAR(100) DETERMINISTIC
+BEGIN
+    RETURN @current_user_branch; -- Will be set at runtime
+END //
+DELIMITER ;
+
+FOR STAFF BY BRANCH
+
+DROP VIEW IF EXISTS branch_staff;
+
+CREATE VIEW branch_staff AS
+SELECT staff_id, name, email, phone_number, branch, role, status FROM staff 
+WHERE branch = get_current_branch(); -- Uses the function
+
+
+
+FOR BOOKING BY BRANCH
+
+DROP VIEW IF EXISTS branch_booking;
+
+CREATE VIEW branch_booking AS
+SELECT b.* FROM booking b
+JOIN customer c ON b.customer_id = c.customer_id
+WHERE c.city = get_current_branch(); -- Uses the function
