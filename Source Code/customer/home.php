@@ -35,13 +35,6 @@ session_start();
                         </a>
                     </li>
 
-                    <!-- Community -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="community.php">
-                            <span class="menu-title">Community</span>
-                        </a>
-                    </li>
-
                     <!-- Booking -->
                     <li class="nav-item">
                         <a class="nav-link" href="addbooking.php">
@@ -50,7 +43,7 @@ session_start();
                     </li>
 
                     <?php
-                    if (isset($_SESSION['loggedin'])) {
+                    if (isset($_SESSION['customer_id'])) {
                     ?>
                         <!-- Booking List -->
                         <li class="nav-item">
@@ -64,7 +57,7 @@ session_start();
                 </ul>
                 <ul class="navbar-nav navbar-nav-right">
                     <?php
-                    if (!isset($_SESSION['loggedin'])) {
+                    if (!isset($_SESSION['customer_id'])) {
                     ?>
                         <a href="login.php" class="btn btn-primary btn-md btn-margin">Sign In</a>
                     <?php

@@ -51,25 +51,25 @@ session_start();
 
                 <!-- Address -->
                 <div class="form-group row">
-                  <label for="Address1" class="col-sm-3 col-form-label">Address<span class="text-danger"> *</span></label>
+                  <label for="Address" class="col-sm-3 col-form-label">Address<span class="text-danger"> *</span></label>
                   <div class="col-sm-9">
-                    <input type="text" class="form-control" name="Address1" id="Address1" placeholder="Address" required>
+                    <input type="text" class="form-control" name="Address" id="Address" placeholder="Address" required>
                   </div>
                 </div>
                 <div class="form-group row">
-                  <label for="Address2" class="col-sm-3 col-form-label">State<span class="text-danger"> *</span></label>
+                  <label for="State" class="col-sm-3 col-form-label">State<span class="text-danger"> *</span></label>
                   <div class="col-sm-9">
-                    <select class="form-control" name="Address2" id="Address2" required onchange="changeInputColor(); updateCities()">
+                    <select class="form-control" name="State" id="State" required onchange="changeInputColor(); updateCities()">
                       <option value="" disabled selected>State</option>
-                      <option value="melaka">Melaka</option>
-                      <option value="negeri sembilan">Negeri Sembilan</option>
+                      <option value="Melaka">Melaka</option>
+                      <option value="Negeri Sembilan">Negeri Sembilan</option>
                     </select>
                   </div>
                 </div>
                 <div class="form-group row">
-                  <label for="Address3" class="col-sm-3 col-form-label">City<span class="text-danger"> *</span></label>
+                  <label for="City" class="col-sm-3 col-form-label">City<span class="text-danger"> *</span></label>
                   <div class="col-sm-9">
-                    <select class="form-control" name="Address3" id="Address3" required onchange="changeInputColor()">
+                    <select class="form-control" name="City" id="City" required onchange="changeInputColor()">
                       <option value="" disabled selected hidden>City</option>
                     </select>
                   </div>
@@ -132,7 +132,7 @@ session_start();
 
                 <!-- Log in navigation -->
                 <div class="text-center mt-4 font-weight-light">
-                  Already have an account? <a href="login.html" class="text-primary">Sign In</a>
+                  Already have an account? <a href="login.php" class="text-primary">Sign In</a>
                 </div>
               </form>
             </div>
@@ -148,26 +148,26 @@ session_start();
   <script>
     // Change input font color when selecting
     function changeInputColor() {
-      const selectAddress2 = document.getElementById('Address2');
-      const selectAddress3 = document.getElementById('Address3');
+      const selectCity = document.getElementById('City');
+      const selectState = document.getElementById('State');
 
-      if (selectAddress2.value !== '') {
-        selectAddress2.style.color = '#495057';
+      if (selectCity.value !== '') {
+        selectCity.style.color = '#495057';
       } else {
-        selectAddress2.style.color = '';
+        selectCity.style.color = '';
       }
 
-      if (selectAddress3.value !== '') {
-        selectAddress3.style.color = '#495057';
+      if (selectState.value !== '') {
+        selectState.style.color = '#495057';
       } else {
-        selectAddress3.style.color = '';
+        selectState.style.color = '';
       }
     }
 
     // Generate city options based on state selected
     function updateCities() {
-      const stateSelect = document.getElementById('Address2');
-      const citySelect = document.getElementById('Address3');
+      const stateSelect = document.getElementById('State');
+      const citySelect = document.getElementById('City');
 
       // Clear existing cities
       citySelect.innerHTML = '<option value="" disabled selected hidden>City</option>';
@@ -183,7 +183,7 @@ session_start();
       // Populate city dropdown
       cities.forEach(function(city) {
         const option = document.createElement('option');
-        option.value = city.toLowerCase();
+        option.value = city;
         option.textContent = city;
         citySelect.appendChild(option);
       });
@@ -200,7 +200,7 @@ session_start();
   <script src="..\js\off-canvas.js"></script>
   <script src="..\js\hoverable-collapse.js"></script>
   <script src="..\js\template.js"></script>
-  <script src="..\js\settings.js""></script>
+  <script src="..\js\settings.js"></script>
   <script src=" ..\js\todolist.js"></script>
 </body>
 
