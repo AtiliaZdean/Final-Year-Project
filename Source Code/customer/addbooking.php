@@ -113,7 +113,7 @@ session_start();
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label for="Time">Time<span class="text-danger"> *</span></label>
-                                                        <select type="time" class="form-control" name="Time" id="Time" required onchange="changeInputColor()">
+                                                        <select type="time" class="form-control" name="Time" id="Time" required>
                                                             <option value="" disabled selected>Select a date first</option>
                                                         </select>
                                                     </div>
@@ -150,7 +150,7 @@ session_start();
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label for="NoOfBedrooms">Number Of Bedrooms<span class="text-danger"> *</span></label>
-                                                        <select type="text" class="form-control" name="NoOfBedrooms" id="NoOfBedrooms" required onchange="changeInputColor()">
+                                                        <select type="text" class="form-control" name="NoOfBedrooms" id="NoOfBedrooms" required>
                                                             <option value="" disabled selected>Select number of bedrooms</option>
                                                             <option value="0">None</option>
                                                             <option value="1">1</option>
@@ -165,7 +165,7 @@ session_start();
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label for="NoOfBathrooms">Number Of Bathrooms<span class="text-danger"> *</span></label>
-                                                        <select type="text" class="form-control" name="NoOfBathrooms" id="NoOfBathrooms" required onchange="changeInputColor()">
+                                                        <select type="text" class="form-control" name="NoOfBathrooms" id="NoOfBathrooms" required>
                                                             <option value="" disabled selected>Select number of bathrooms</option>
                                                             <option value="0">None</option>
                                                             <option value="1">1</option>
@@ -181,7 +181,7 @@ session_start();
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label for="NoOfLivingrooms">Number Of Livingrooms<span class="text-danger"> *</span></label>
-                                                        <select type="text" class="form-control" name="NoOfLivingrooms" id="NoOfLivingrooms" required onchange="changeInputColor()">
+                                                        <select type="text" class="form-control" name="NoOfLivingrooms" id="NoOfLivingrooms" required>
                                                             <option value="" disabled selected>Select number of livingrooms</option>
                                                             <option value="0">None</option>
                                                             <option value="1">1</option>
@@ -289,7 +289,7 @@ session_start();
                                             <div class="col-md-9">
                                                 <div class="form-group">
                                                     <label for="NoOfCleaners">Number Of Cleaners<span class="text-danger"> *</span></label>
-                                                    <select type="text" class="form-control" name="NoOfCleaners" id="NoOfCleaners" required onchange="changeInputColor()">
+                                                    <select type="text" class="form-control" name="NoOfCleaners" id="NoOfCleaners" required>
                                                         <option value="" disabled selected>Select number of cleaners</option>
                                                     </select>
                                                 </div>
@@ -361,7 +361,7 @@ session_start();
                     ?>
                         <div class="row row-center">
                             <div class="col-md-12 col-center grid-margin">
-                                <p>Sign in first to make a booking.</p>
+                                <p><a href="register.php" class="text-primary">Sign in</a> first to make a booking.</p>
                             </div>
                         </div>
                     <?php
@@ -403,25 +403,6 @@ session_start();
 
         // Service tax rate (6%)
         const SERVICE_TAX_RATE = 0.06;
-
-        // Changes input color when selected
-        function changeInputColor() {
-            const inputs = [
-                document.getElementById('Time'),
-                document.getElementById('NoOfBedrooms'),
-                document.getElementById('NoOfBathrooms'),
-                document.getElementById('NoOfLivingrooms'),
-                document.getElementById('NoOfCleaners')
-            ];
-
-            inputs.forEach(input => {
-                if (input && input.value !== '') {
-                    input.style.color = '#495057';
-                } else if (input) {
-                    input.style.color = '';
-                }
-            });
-        }
 
         // Resets all form fields and calculations
         function resetForms() {
@@ -569,6 +550,22 @@ session_start();
 
             if (!selectedDate) {
                 timeSelect.innerHTML = '<option value="">Select a date first</option>';
+                return;
+            }
+
+            // Get today's date
+            const today = new Date();
+            const selected = new Date(selectedDate);
+
+            // Check if the selected date is today or in the past
+            if (selected < today) {
+                alert("The selected date cannot be in the past.");
+                return;
+            }
+            
+            // Check if the selected date is today
+            if (selected.toDateString() === today.toDateString()) {
+                alert("The selected date cannot be today. Please choose a future date.");
                 return;
             }
 

@@ -116,8 +116,8 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
                     <div class="row row-center">
                         <div class="col-md-12 col-center grid-margin">
                             <?php
-                            echo "<p>" . count($bookings) . " booking(s) made.</p>";
                             if (count($bookings) > 0):
+                                echo "<p>" . count($bookings) . " booking(s) made.</p>";
                             ?>
                         </div>
                     </div>
@@ -331,10 +331,7 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
 
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <div class="row row-center">
-                        <div class="col-md-12 col-center grid-margin">
-                            <p>No booking made.Let's </p>
-                            <a href="addbooking.php" class="text-primary">book now !</a>
+                            <p>No booking made. Let's <a href="addbooking.php" class="text-primary">book now !</a></p>
                         </div>
                     </div>
                 <?php endif; ?>

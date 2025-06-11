@@ -1,7 +1,13 @@
 <?php
 session_start();
-session_unset(); 
-session_destroy(); 
-header("Location: home.php"); 
+
+// Unset specific session variables
+unset($_SESSION['customer_id']);
+unset($_SESSION['name']);
+unset($_SESSION['address']);
+unset($_SESSION['city']);
+unset($_SESSION['state']);
+
+header("Location: home.php");
 exit();
 ?>
