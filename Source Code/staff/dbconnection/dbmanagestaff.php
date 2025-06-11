@@ -6,13 +6,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Retrieve form data
     $name = $_POST['Name'];
     $phone_number = $_POST['PhoneNumber'];
-    $branch = $_POST['Branch'];
-    $made_by = $_SESSION['name'];
+    $made_by = $_SESSION['staffname'];
 
     if (isset($_POST['register'])) {
         $email = $_POST['Email'];
         $raw_password = $_POST['Password'];
         $role = $_POST['Role1'];
+        $branch = $_POST['Branch1'];
 
         // Check if staff other than cleaner put email & password
         if ($role != 'Cleaner') {
@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif (isset($_POST['update'])) {
         $id = $_POST['StaffId'];
         $status = $_POST['StatusModal'];
+        $branch = $_POST['Branch2'];
 
         // First check if cleaner is being assigned in any PENDING bookings
         $stmt_check = $conn->prepare("SELECT COUNT(*) FROM BOOKING_CLEANER bc JOIN BOOKING b ON bc.booking_id = b.booking_id WHERE bc.staff_id = ? AND b.status = 'Pending'");
@@ -58,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo "<script>alert('Cannot update staff - she/he is being assigned in pending bookings.');</script>";
         } else {
             // Call stored procedure for update
-            $conn->query("CALL ManageStaff('update', '$id', '$name', NULL, '', '$phone_number', '$branch', '', '$status', '$made_by', @result)");
+            $conn->query("CALL ManageStaff('update', '$id', '$name', '', '', '$phone_number', '$branch', '', '$status', '$made_by', @result)");
             $result = $conn->query("SELECT @result AS result")->fetch_assoc();
 
             // Success/fail message

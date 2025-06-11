@@ -8,7 +8,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $description = $_POST['Description'];
     $price = $_POST['Price'];
     $duration = $_POST['Duration'];
-    $staff = $_SESSION['name'];
+    $staff = $_SESSION['staffname'];
 
     $conn->query("SET @made_by = '$staff'");
 

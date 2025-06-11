@@ -37,7 +37,7 @@ if ($stmt_select->num_rows == 0) {
         $conn->query("CALL ManageStaff('login', $staff_id, '$name', '', '', '', '', '', '', '$name', @result)");
 
         $_SESSION['staff_id'] = $staff_id;
-        $_SESSION['name'] = $name;
+        $_SESSION['staffname'] = $name;
         $_SESSION['branch'] = $branch;
 
         header("Location: ../dashboard.php");

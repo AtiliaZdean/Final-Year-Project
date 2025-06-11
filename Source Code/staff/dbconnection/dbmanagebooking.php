@@ -8,16 +8,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $status = $_POST['StatusModal'];
     $payment_status = $_POST['PaymentStatusModal'];
     $note = $_POST['Note'];
-    $staff = $_SESSION['name'];
+    $conn->query("SET @current_user = '" . $_SESSION['staffname'] . "'");
 
     try {
-        // update into table booking
+        // Get current status before updating
+        $stmt_get_current = $conn->prepare("SELECT status FROM booking WHERE booking_id = ?");
+        $stmt_get_current->bind_param("i", $id);
+        $stmt_get_current->execute();
+        $result = $stmt_get_current->get_result();
+        $current_data = $result->fetch_assoc();
+        $old_status = $current_data['status'];
+        $stmt_get_current->close();
+
+        // Start transaction
+        $conn->begin_transaction();
+
+        // Update booking table
         $stmt_booking = $conn->prepare("UPDATE booking SET status = ?, note = ? WHERE booking_id = ?");
         $stmt_booking->bind_param("ssi", $status, $note, $id);
         $stmt_booking->execute();
         $stmt_booking->close();
 
-        // update into table payment
+        // Update payment table
         if ($payment_status == 'Completed') {
             $stmt_payment = $conn->prepare("UPDATE payment SET status = ?, payment_date = NOW() WHERE booking_id = ?");
             $stmt_payment->bind_param("si", $payment_status, $id);
@@ -28,24 +40,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt_payment = $conn->prepare("UPDATE payment SET status = 'Cancelled', payment_date = NULL WHERE booking_id = ?");
             $stmt_payment->bind_param("i", $id);
         } else {
-            // Fallback to keep existing payment status
             $stmt_payment = $conn->prepare("UPDATE payment SET status = ?, payment_date = NULL WHERE booking_id = ?");
             $stmt_payment->bind_param("si", $payment_status, $id);
         }
         $stmt_payment->execute();
         $stmt_payment->close();
 
-        // update into table booking_log
-        $stmt_log = $conn->prepare("INSERT INTO booking_log (booking_id, made_by) VALUES (?, ?)");
-        $stmt_log->bind_param("is", $id, $staff);
-        $stmt_log->execute();
-        $stmt_log->close();
+        // Commit transaction
+        $conn->commit();
 
         echo "<script>alert('The update is successful.');</script>";
         echo "<script>window.location.href = '../managebooking.php';</script>";
         exit;
     } catch (Exception $e) {
-        echo "<script>alert('Failed to update booking.');</script>";
+        $conn->rollback();
+        error_log("Booking update failed: " . $e->getMessage());
+        echo "<script>alert('Failed to update booking. Please try again.');</script>";
         echo "<script>window.location.href = '../managebooking.php';</script>";
         exit;
     }
