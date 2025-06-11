@@ -95,6 +95,13 @@ if (!isset($_SESSION['staff_id'])) {
                         </a>
                     </li>
 
+                    <!-- Report -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="report.php">
+                            <span class="menu-title">Report</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -120,7 +127,7 @@ if (!isset($_SESSION['staff_id'])) {
                                 <div class="card-body">
                                     <h4 class="card-title">Service List</h4>
                                     <div class="table-responsive pt-3">
-                                        <table class="table table-bordered">
+                                        <table class="table table-bordered table-hover">
                                             <thead>
                                                 <tr>
                                                     <th style="text-align: center;">Name</th>

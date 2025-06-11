@@ -1,7 +1,10 @@
 <?php
 session_start();
-session_unset(); 
-session_destroy(); 
+
+unset($_SESSION['staff_id']);
+unset($_SESSION['staffname']);
+unset($_SESSION['branch']);
+
 header("Location: login.php"); 
 exit();
 ?>

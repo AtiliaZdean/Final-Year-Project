@@ -96,6 +96,13 @@ if (!isset($_SESSION['staff_id'])) {
                         </a>
                     </li>
 
+                    <!-- Report -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="report.php">
+                            <span class="menu-title">Report</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -129,7 +136,7 @@ if (!isset($_SESSION['staff_id'])) {
                                         <input type="text" class="form-control form-control-sm mr-3" name="Cleaner" id="Cleaner" placeholder="Cleaner's name">
 
                                         <!-- By status -->
-                                        <select class="form-control form-control-sm mr-3" name="Status" id="Status" onchange="changeInputColor()">
+                                        <select class="form-control form-control-sm mr-3" name="Status" id="Status">
                                             <option value="" disabled selected>Status</option>
                                             <option value="Pending">Pending</option>
                                             <option value="Completed">Completed</option>
@@ -137,7 +144,7 @@ if (!isset($_SESSION['staff_id'])) {
                                         </select>
 
                                         <!-- By payment status -->
-                                        <select class="form-control form-control-sm mr-4" name="PaymentStatus" id="PaymentStatus" onchange="changeInputColor()">
+                                        <select class="form-control form-control-sm mr-4" name="PaymentStatus" id="PaymentStatus">
                                             <option value="" disabled selected>Payment status</option>
                                             <option value="Pending">Pending</option>
                                             <option value="Completed">Completed</option>
@@ -157,7 +164,7 @@ if (!isset($_SESSION['staff_id'])) {
                             <div class="card">
                                 <div class="card-body">
                                     <div class="table-responsive pt-3">
-                                        <table class="table table-bordered">
+                                        <table class="table table-bordered table-hover">
                                             <thead>
                                                 <tr>
                                                     <th>#</th>
@@ -241,34 +248,42 @@ if (!isset($_SESSION['staff_id'])) {
                                                             $paymentStatusClass = 'badge-warning';
                                                         }
 
+                                                        $jsArgs = [
+                                                            $row['booking_id'],
+                                                            $row['customer_name'],
+                                                            $row['phone_number'],
+                                                            $row['customer_address'] . ', ' . $row['city'] . ', ' . $row['state'],
+                                                            $row['total_area_sqft'],
+                                                            $row['no_of_bedrooms'],
+                                                            $row['no_of_bathrooms'],
+                                                            $row['no_of_livingroooms'],
+                                                            $row['size_of_kitchen_sqft'],
+                                                            $row['pet'],
+                                                            $row['custom_request'] ?? '',
+                                                            $row['scheduled_date'],
+                                                            $row['scheduled_time'],
+                                                            $row['estimated_duration_hour'],
+                                                            $row['total_RM'],
+                                                            $row['no_of_cleaners'],
+                                                            $row['cleaners'],
+                                                            $row['services'] ?? '',
+                                                            $row['status'],
+                                                            $row['payment_status'],
+                                                            $row['note'] ?? '',
+                                                            $row['made_by'] ?? '',
+                                                            $row['made_at'] ?? ''
+                                                        ];
+
+                                                        // JSON encode each argument (to properly escape special chars)
+                                                        $jsArgsEncoded = array_map(function($arg) {
+                                                            return json_encode($arg, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+                                                        }, $jsArgs);
+                                                        $jsArgsString = implode(',', $jsArgsEncoded);
+
                                                         echo "<tr>
                                                             <td style='text-align: center;'>
-                                                                <a class='ti-pencil-alt text-primary' style='text-decoration: none;' 
-                                                                    onclick=\"openModal(
-                                                                    '{$row['booking_id']}',
-                                                                    '" . htmlspecialchars($row['customer_name'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['phone_number'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['customer_address'] . ', ' . $row['city'] . ', ' . $row['state'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['total_area_sqft'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['no_of_bedrooms'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['no_of_bathrooms'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['no_of_livingroooms'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['size_of_kitchen_sqft'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['pet'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['custom_request'] ?? '', ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['scheduled_date'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['scheduled_time'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['estimated_duration_hour'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['total_RM'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['no_of_cleaners'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['cleaners'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['services'] ?? '', ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['status'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['payment_status'], ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['note'] ?? '', ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['made_by'] ?? '', ENT_QUOTES) . "',
-                                                                    '" . htmlspecialchars($row['made_at'] ?? '', ENT_QUOTES) . "'
-                                                                )\"></a>
+                                                                <a class='ti-pencil-alt text-primary' style='text-decoration: none; cursor:pointer;' 
+                                                                    onclick='openModal($jsArgsString)'></a>
                                                             </td>
                                                             <td>" . htmlspecialchars($row["scheduled_date"]) . "</td>
                                                             <td>" . htmlspecialchars($row["scheduled_time"]) . "</td>
@@ -532,13 +547,19 @@ if (!isset($_SESSION['staff_id'])) {
                                             </div>
                                         </div>
 
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <h5>More</h5>
+                                            </div>
+                                        </div>
+
                                         <div class="row">
                                             <!-- Note -->
                                             <div class="col-md-6">
                                                 <div class="form-group row">
                                                     <label class="col-sm-3 col-form-label">Note</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control col-sm-2" name="Note" id="Note">
+                                                        <input type="text" class="form-control" name="Note" id="Note">
                                                     </div>
                                                 </div>
                                             </div>
@@ -568,29 +589,16 @@ if (!isset($_SESSION['staff_id'])) {
 
     <!-- Function Javascripts -->
     <script>
-        // Change input font color when selecting
-        function changeInputColor() {
-            const selects = document.querySelectorAll('select');
-            selects.forEach(select => {
-                if (select.value !== '') {
-                    select.style.color = '#495057';
-                } else {
-                    select.style.color = '';
-                }
-            });
-        }
-
         // Reset all filter dropdowns to their default state
         function resetFilters() {
             document.getElementById('Date').value = '';
             document.getElementById('Cleaner').value = '';
             document.getElementById('Status').selectedIndex = 0;
             document.getElementById('PaymentStatus').selectedIndex = 0;
-            changeInputColor();
             document.forms[0].submit();
         }
 
-        $('#staffModal').on('hidden.bs.modal', function() {
+        $('#bookingModal').on('hidden.bs.modal', function() {
             // Clear any focused elements when modal closes
             if (document.activeElement) {
                 document.activeElement.blur();

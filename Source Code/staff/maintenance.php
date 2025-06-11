@@ -136,6 +136,13 @@ $backupFiles = array_diff(scandir($backupDir), array('..', '.'));
                         </a>
                     </li>
 
+                    <!-- Report -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="report.php">
+                            <span class="menu-title">Report</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -161,7 +168,7 @@ $backupFiles = array_diff(scandir($backupDir), array('..', '.'));
                                 <div class="card-body">
                                     <form method="POST">
                                         <div class="table-responsive">
-                                            <table class="table">
+                                            <table class="table table-hover">
                                                 <tbody>
                                                     <tr>
                                                         <td>Backup Database</td>
@@ -173,7 +180,7 @@ $backupFiles = array_diff(scandir($backupDir), array('..', '.'));
                                                     <tr>
                                                         <td>Restore Database</td>
                                                         <td>
-                                                            <select class="form-control form-control-sm" name="RestoreFile" id="Restore" onchange="changeInputColor()">
+                                                            <select class="form-control form-control-sm" name="RestoreFile" id="Restore">
                                                                 <option value="" disabled selected>Select a backup file</option>
                                                                 <?php foreach ($backupFiles as $file): ?>
                                                                     <option value="<?php echo $backupDir . '\\' . $file; ?>"><?php echo $file; ?></option>
@@ -219,21 +226,6 @@ $backupFiles = array_diff(scandir($backupDir), array('..', '.'));
             </div>
         </div>
     </div>
-
-    <!-- Function Javascripts -->
-    <script>
-        // Change input font color when selecting
-        function changeInputColor() {
-            // For filter section
-            const selectFile = document.getElementById('Restore');
-
-            if (selectFile.value !== '') {
-                selectFile.style.color = '#495057';
-            } else {
-                selectFile.style.color = '';
-            }
-        }
-    </script>
 
     <!-- javascript files -->
     <script src="../vendors/js/vendor.bundle.base.js"></script>

@@ -95,6 +95,13 @@ if (!isset($_SESSION['staff_id'])) {
                         </a>
                     </li>
 
+                    <!-- Report -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="report.php">
+                            <span class="menu-title">Report</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">

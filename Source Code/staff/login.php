@@ -55,11 +55,6 @@
                 <div class="mt-3">
                   <button class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" type="submit">Sign In</button>
                 </div>
-
-                <!-- Sign up navigation -->
-                <div class="text-center mt-4 font-weight-light">
-                  Doesn't have an account? <a href="register.php" class="text-primary">Sign Up</a>
-                </div>
               </form>
             </div>
           </div>

@@ -115,6 +115,13 @@ if ($result->num_rows > 0) {
                         </a>
                     </li>
 
+                    <!-- Report -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="report.php">
+                            <span class="menu-title">Report</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -144,7 +151,7 @@ if ($result->num_rows > 0) {
                                         <!-- Service name -->
                                         <div class="form-group">
                                             <label for="Name">Name<span class="text-danger"> *</span></label>
-                                            <select class="form-control" name="Name" id="Name" required onchange="changeInputColor()">
+                                            <select class="form-control" name="Name" id="Name" required>
                                                 <option value="" disabled selected hidden>Select a service</option>
                                                 <?php foreach ($services as $service): ?>
                                                     <option value="<?php echo $service['service_id']; ?>" data-description="<?php echo htmlspecialchars($service['description']); ?>" data-price="<?php echo htmlspecialchars($service['price_RM']); ?>" data-duration="<?php echo htmlspecialchars($service['duration_hour']); ?>" data-updated-by="<?php echo htmlspecialchars($service['made_by'] ?? ''); ?>" data-updated-at="<?php echo htmlspecialchars($service['made_at'] ?? ''); ?>">
@@ -258,17 +265,6 @@ if ($result->num_rows > 0) {
                 latestUpdateElement.textContent = 'No updates made.';
             }
         });
-
-        // Change input font color when selecting
-        function changeInputColor() {
-            const selectName = document.getElementById('Name');
-
-            if (selectName.value !== '') {
-                selectName.style.color = '#495057';
-            } else {
-                selectName.style.color = '';
-            }
-        }
 
         function formatPrice(input) {
             let value = input.value.replace(/[^0-9.]/g, '');

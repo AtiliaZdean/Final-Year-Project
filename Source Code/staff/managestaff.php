@@ -96,6 +96,13 @@ if (!isset($_SESSION['staff_id'])) {
                         </a>
                     </li>
 
+                    <!-- Report -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="report.php">
+                            <span class="menu-title">Report</span>
+                        </a>
+                    </li>
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -123,14 +130,14 @@ if (!isset($_SESSION['staff_id'])) {
                                         <label class="mr-3">Search by :</label>
 
                                         <!-- By role -->
-                                        <select class="form-control form-control-sm mr-3" name="Role" id="Role" onchange="changeInputColor()">
+                                        <!-- <select class="form-control form-control-sm mr-3" name="Role" id="Role">
                                             <option value="" disabled selected>Role</option>
                                             <option value="Admin">Admin</option>
                                             <option value="Cleaner">Cleaner</option>
-                                        </select>
+                                        </select> -->
 
                                         <!-- By status -->
-                                        <select class="form-control form-control-sm mr-4" name="Status" id="Status" onchange="changeInputColor()">
+                                        <select class="form-control form-control-sm mr-4" name="Status" id="Status">
                                             <option value="" disabled selected>Status</option>
                                             <option value="Active">Active</option>
                                             <option value="In-Active">In-active</option>
@@ -152,12 +159,11 @@ if (!isset($_SESSION['staff_id'])) {
                                 <div class="card-body">
                                     <button type="button" class="btn btn-primary mr-2" data-toggle="modal" data-target="#staffModal" onclick="openModal('register')">Register New Staff</button>
                                     <div class="table-responsive pt-3">
-                                        <table class="table table-bordered">
+                                        <table class="table table-bordered table-hover">
                                             <thead>
                                                 <tr>
                                                     <th style="text-align: center;">#</th>
                                                     <th style="text-align: center;">Name</th>
-                                                    <th style="text-align: center;">Email</th>
                                                     <th style="text-align: center;">Phone No.</th>
                                                     <th style="text-align: center;">Branch</th>
                                                     <th style="text-align: center;">Role</th>
@@ -183,32 +189,39 @@ if (!isset($_SESSION['staff_id'])) {
                                                                     GROUP BY staff_id
                                                                     ) sl2 ON sl1.staff_id = sl2.staff_id AND sl1.made_at = sl2.latest_log
                                                                 ) sl ON s.staff_id = sl.staff_id
-                                                                WHERE 1=1"; // Start with a base query
-                                                if (!empty($role)) {
+                                                                WHERE 1=1 AND role = 'Cleaner'"; // Start with a base query
+                                                /* if (!empty($role)) {
                                                     $stmt_list .= " AND role = '" . $conn->real_escape_string($role) . "'";
-                                                }
+                                                } */
                                                 if (!empty($status)) {
                                                     $stmt_list .= " AND status = '" . $conn->real_escape_string($status) . "'";
                                                 }
                                                 $result = $conn->query($stmt_list);
 
-                                                echo "<tr><td colspan='7'>" . $result->num_rows . " rows returned</td></tr>";
+                                                echo "<tr><td colspan='6'>" . $result->num_rows . " rows returned</td></tr>";
                                                 if ($result->num_rows > 0) {
                                                     while ($row = $result->fetch_assoc()) {
+                                                        // Determine badge class for status
+                                                        $statusClass = '';
+                                                        if ($row['status'] == 'Active') {
+                                                            $statusClass = 'badge-success';
+                                                        } else {
+                                                            $statusClass = 'badge-danger';
+                                                        }
+                                                        
                                                         echo "<tr>
                                                             <td style='text-align: center;'>
                                                                 <a class='ti-pencil-alt text-primary' style='text-decoration: none;' onclick=\"openModal('edit', '" . htmlspecialchars($row['staff_id']) . "', '" . htmlspecialchars($row['name']) . "', '" . htmlspecialchars($row['phone_number']) . "', '" . htmlspecialchars($row['branch']) . "', '" . htmlspecialchars($row['role']) . "', '" . htmlspecialchars($row['status']) . "', '" . htmlspecialchars($row['made_at']) . "', '" . htmlspecialchars($row['made_by']) . "')\"></a>
                                                             </td>
                                                             <td>" . htmlspecialchars($row["name"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["email"]) . "</td>
                                                             <td>" . htmlspecialchars($row["phone_number"]) . "</td>
                                                             <td>" . htmlspecialchars($row["branch"]) . "</td>
                                                             <td>" . htmlspecialchars($row["role"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["status"]) . "</td>
+                                                            <td style='text-align: center;'><span class='badge $statusClass'>" . htmlspecialchars($row["status"]) . "</span></td>
                                                         </tr>";
                                                     }
                                                 } else {
-                                                    echo "<tr><td colspan='7'>No staff found</td></tr>";
+                                                    echo "<tr><td colspan='6'>No staff found</td></tr>";
                                                 }
                                                 ?>
                                             </tbody>
@@ -227,9 +240,19 @@ if (!isset($_SESSION['staff_id'])) {
                                     <h4 class="modal-title" id="staffModalLabel">Register Staff</h4>
 
                                     <form class="pt-3" id="staffForm" method="POST" action="dbconnection/dbmanagestaff.php" onsubmit="return confirmAction(event)">
-                                        <small class="form-text text-muted"><span class="text-danger">*</span> - required</small>
+                                        <small class="form-text text-muted"><span class="text-danger">*</span> - required</small></br>
 
                                         <input type="hidden" name="StaffId" id="StaffId" value="">
+
+                                        <!-- Role -->
+                                        <div class="form-group" id="roleGroup1">
+                                            <label for="Role1">Role<span class="text-danger"> *</span></label>
+                                            <select class="form-control" name="Role1" id="Role1" required>
+                                                <option value="" disabled selected>Role</option>
+                                                <option value="Admin">Admin</option>
+                                                <option value="Cleaner">Cleaner</option>
+                                            </select>
+                                        </div>
 
                                         <!-- Name -->
                                         <div class="form-group">
@@ -239,13 +262,14 @@ if (!isset($_SESSION['staff_id'])) {
 
                                         <!-- Email -->
                                         <div class="form-group" id="emailGroup">
+                                            <small class="form-text text-muted">Email and password are not required for cleaner.</small></br>
                                             <label for="Email">Email</label>
                                             <input type="email" class="form-control" name="Email" id="Email" placeholder="Email">
                                         </div>
 
                                         <!-- Password -->
                                         <div class="form-group" id="passwordGroup">
-                                            <label for="Password">Password</label>
+                                            <label for="Password">Password</label><!-- <i class="ti-info-alt text-muted"> -->
                                             <input type="password" class="form-control" name="Password" id="Password" placeholder="Password">
                                             <small class="form-text text-muted">Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.</small>
                                         </div>
@@ -257,9 +281,15 @@ if (!isset($_SESSION['staff_id'])) {
                                         </div>
 
                                         <!-- Branch -->
-                                        <div class="form-group">
-                                            <label for="Branch">Branch<span class="text-danger"> *</span></label>
-                                            <select class="form-control" name="Branch" id="BranchModal" required onchange="changeInputColor()">
+                                        <div class="form-group" id="branchGroup1">
+                                            <label for="Branch1">Branch</label>
+                                            <input type="text" class="form-control" name="Branch1" id="Branch1" readonly>
+                                        </div>
+
+                                        <!-- Branch for edit -->
+                                        <div class="form-group" id="branchGroup2" style="display: none;">
+                                            <label for="Branch2">Branch</label>
+                                            <select class="form-control" name="Branch2" id="Branch2">
                                                 <option value="" disabled selected>Branch</option>
                                                 <!-- Melaka -->
                                                 <option value="Ayer Keroh">Ayer Keroh</option>
@@ -274,16 +304,6 @@ if (!isset($_SESSION['staff_id'])) {
                                             </select>
                                         </div>
 
-                                        <!-- Role -->
-                                        <div class="form-group" id="roleGroup1">
-                                            <label for="Role1">Role<span class="text-danger"> *</span></label>
-                                            <select class="form-control" name="Role1" id="Role1" required onchange="changeInputColor()">
-                                                <option value="" disabled selected>Role</option>
-                                                <option value="Admin">Admin</option>
-                                                <option value="Cleaner">Cleaner</option>
-                                            </select>
-                                        </div>
-
                                         <!-- Role for edit -->
                                         <div class="form-group" id="roleGroup2" style="display: none;">
                                             <label for="Role2">Role</label>
@@ -293,7 +313,7 @@ if (!isset($_SESSION['staff_id'])) {
                                         <!-- Status -->
                                         <div class="form-group" id="statusGroup">
                                             <label for="Status">Status<span class="text-danger"> *</span></label>
-                                            <select class="form-control" name="StatusModal" id="StatusModal" onchange="changeInputColor()">
+                                            <select class="form-control" name="StatusModal" id="StatusModal">
                                                 <option value="" disabled selected>Status</option>
                                                 <option value="Active">Active</option>
                                                 <option value="In-Active">In-Active</option>
@@ -323,33 +343,10 @@ if (!isset($_SESSION['staff_id'])) {
 
     <!-- Function Javascripts -->
     <script>
-        // Change input font color when selecting
-        function changeInputColor() {
-            // For filter section
-            const selectRole = document.getElementById('Role');
-            const selectBranch = document.getElementById('Branch');
-            const selectStatus = document.getElementById('Status');
-
-            // For modal section
-            const selectRoleModal = document.getElementById('RoleModal');
-            const selectBranchModal = document.getElementById('BranchModal');
-            const selectStatusModal = document.getElementById('StatusModal');
-
-            [selectRole, selectBranch, selectStatus, selectRoleModal, selectBranchModal, selectStatusModal].forEach(select => {
-                if (select && select.value !== '') {
-                    select.style.color = '#495057';
-                } else if (select) {
-                    select.style.color = '';
-                }
-            });
-        }
-
         // Reset all filter dropdowns to their default state
         function resetFilters() {
             document.getElementById('Role').selectedIndex = 0;
             document.getElementById('Status').selectedIndex = 0;
-
-            changeInputColor();
 
             document.forms[0].submit();
         }
@@ -364,6 +361,8 @@ if (!isset($_SESSION['staff_id'])) {
         function openModal(action, id = '', name = '', phone = '', branch = '', role = '', status = '', lastUpdateTime = '', lastUpdatedBy = '') {
             const modalTitle = document.getElementById('staffModalLabel');
             const emailGroup = document.getElementById('emailGroup');
+            const branchGroup1 = document.getElementById('branchGroup1');
+            const branchGroup2 = document.getElementById('branchGroup2');
             const rolelGroup1 = document.getElementById('roleGroup1');
             const rolelGroup2 = document.getElementById('roleGroup2');
             const passwordGroup = document.getElementById('passwordGroup');
@@ -377,6 +376,8 @@ if (!isset($_SESSION['staff_id'])) {
             if (action === 'edit') {
                 modalTitle.textContent = 'Edit Staff';
                 emailGroup.style.display = 'none'; // Hide email field for edit
+                branchGroup1.style.display = 'none';
+                branchGroup2.style.display = 'block';
                 roleGroup1.style.display = 'none';
                 roleGroup2.style.display = 'block';
                 passwordGroup.style.display = 'none';
@@ -390,10 +391,10 @@ if (!isset($_SESSION['staff_id'])) {
                 nameInput.value = name;
                 nameInput.readOnly = true;
                 document.getElementById('PhoneNumber').value = phone;
-                const branchSelect = document.getElementById('BranchModal');
+                const branchSelect = document.getElementById('Branch2');
                 branchSelect.value = branch;
                 roleText.value = role;
-                roleText.readOnly = true;
+                roleSelect.value = role;
                 const statusSelect = document.getElementById('StatusModal');
                 statusSelect.value = status;
 
@@ -406,6 +407,8 @@ if (!isset($_SESSION['staff_id'])) {
             } else {
                 modalTitle.textContent = 'Register Staff';
                 emailGroup.style.display = 'block'; // Show email field for register
+                branchGroup1.style.display = 'block';
+                branchGroup2.style.display = 'none';
                 roleGroup1.style.display = 'block';
                 roleGroup2.style.display = 'none';
                 passwordGroup.style.display = 'block';
@@ -420,7 +423,9 @@ if (!isset($_SESSION['staff_id'])) {
                 document.getElementById('PhoneNumber').value = '';
                 document.getElementById('Email').value = '';
                 document.getElementById('Password').value = '';
-                document.getElementById('Branch').value = '';
+                roleSelect.value = '';
+                const branchText = document.getElementById('Branch1');
+                branchText.value = "<?php echo $_SESSION['branch']; ?>";
             }
 
             // Show the modal
