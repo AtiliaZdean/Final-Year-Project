@@ -44,46 +44,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt_payment->execute();
         $stmt_payment->close();
 
-        // Retrieve available cleaners
-        $stmt_avaiablecleaner = $conn->prepare("
-            SELECT s.staff_id
-            FROM STAFF s
-            WHERE s.branch = ?
-            AND s.role = 'Cleaner'
-            AND s.staff_id NOT IN (
-                SELECT bc.staff_id
-                FROM BOOKING_CLEANER bc
-                JOIN BOOKING b ON bc.booking_id = b.booking_id
-                WHERE b.scheduled_date = ?
-                AND b.status = 'Pending'
-                AND (
-                    TIME(?) < ADDTIME(b.scheduled_time, SEC_TO_TIME(b.estimated_duration_hour*3600))
-                    AND
-                    ADDTIME(TIME(?), SEC_TO_TIME(?*3600)) > b.scheduled_time
-                )
-            )
-            ORDER BY RAND()
-            LIMIT ?
-        ");
-        
-        $stmt_avaiablecleaner->bind_param("ssssdi", $city, $scheduled_date, $scheduled_time, $scheduled_time, $duration, $no_of_cleaners);
-        $stmt_avaiablecleaner->execute();
-        
-        $cleaners_result = $stmt_avaiablecleaner->get_result();
-        $assigned_cleaners = [];
-        
-        while ($row = $cleaners_result->fetch_assoc()) {
-            $assigned_cleaners[] = $row['staff_id'];
-        }
+        // Assign available cleaners
+        $stmt_assign = $conn->prepare("CALL AssignCleaners(?, ?, ?, ?, ?, ?, @success, @message)");
+        $stmt_assign->bind_param("isssdi", $booking_id, $city, $scheduled_date, $scheduled_time, $duration, $no_of_cleaners);
+        $stmt_assign->execute();
 
-        // Insert available cleaners into BOOKING_CLEANERS
-        $stmt_cleaner = $conn->prepare("INSERT INTO BOOKING_CLEANER (booking_id, staff_id) VALUES (?, ?)");
-        
-        foreach ($assigned_cleaners as $cleaner_id) {
-            $stmt_cleaner->bind_param("ii", $booking_id, $cleaner_id);
-            $stmt_cleaner->execute();
+        // Check if assignment was successful
+        $result = $conn->query("SELECT @success as success, @message as message");
+        $assignment = $result->fetch_assoc();
+
+        if (!$assignment['success']) {
+            throw new Exception("Cleaner assignment failed: " . $assignment['message']);
         }
-        $stmt_cleaner->close();
 
         // Insert each additional service into BOOKING_SERVICE
         if (!empty($additional_services)) {
@@ -109,4 +81,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 $conn->close();
-?>
