@@ -46,6 +46,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $id = $_POST['StaffId'];
         $status = $_POST['StatusModal'];
         $branch = $_POST['Branch2'];
+        $role = $_POST['Role'] ?? '';
+
+        // For admin's update
+        if ($role != 'Cleaner') {
+            $email = $_POST['Email'];
+            $raw_password = $_POST['Password'] ?? '';
+
+            if ($raw_password != '') {
+                if (!preg_match('/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{8,}$/', $raw_password)) {
+                    $_SESSION['EmailMessage'] = "Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.";
+                    header("Location: ../profile.php");
+                    exit();
+                }
+                $password = password_hash($raw_password, PASSWORD_DEFAULT);
+
+                $conn->query("CALL ManageStaff('update', '$id', '$name', '$email', '$password', '$phone_number', '', '', '', '', @result)");
+                $result = $conn->query("SELECT @result AS result")->fetch_assoc();
+            } else {
+                $conn->query("CALL ManageStaff('update', '$id', '$name', '$email', '', '$phone_number', '', '', '', '', @result)");
+                $result = $conn->query("SELECT @result AS result")->fetch_assoc();
+            }
+
+            // Success/fail message
+            if ($result['result'] == 1) {
+                $_SESSION['status'] = 'The update is successful.';
+            } else {
+                $_SESSION['EmailMessage'] = 'Failed to update staff.';
+            }
+            header("Location: ../profile.php");
+            exit;
+        }
 
         // First check if cleaner is being assigned in any PENDING bookings
         $stmt_check = $conn->prepare("SELECT COUNT(*) FROM BOOKING_CLEANER bc JOIN BOOKING b ON bc.booking_id = b.booking_id WHERE bc.staff_id = ? AND b.status = 'Pending'");
