@@ -31,7 +31,7 @@ session_start();
               </div>
               <h4>Sign Up</h4>
               <!-- Form section -->
-              <form class="pt-3" method="POST" action="dbconnection\dbregister.php" onsubmit="return validateForm()">
+              <form class="pt-3" method="POST" action="dbconnection\dbregister.php" onsubmit="return confirmAction(event)">
 
                 <!-- Name -->
                 <div class="form-group">
@@ -143,8 +143,10 @@ session_start();
       });
     }
 
-    // Submit form
-    function validateForm() {
+    // Action confirmation popup
+    function confirmAction(event) {
+      return confirm("Are you sure you want to register with these information?");
+
       return true;
     }
   </script>
