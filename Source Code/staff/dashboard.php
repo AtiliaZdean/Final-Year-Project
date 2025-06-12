@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Check if the user is logged in
+// Check if user is logged in
 if (!isset($_SESSION['staff_id'])) {
   header("Location: login.php");
   exit();
@@ -125,17 +125,170 @@ if (!isset($_SESSION['staff_id'])) {
             </div>
           </div>
 
+          <?php
+          include('../dbconnection.php');
+
+          // Set branch filter
+          $conn->query("SET @current_user_branch = '" . $conn->real_escape_string($_SESSION['branch']) . "'");
+          $today = date('Y-m-d');
+          $yesterday = date('Y-m-d', strtotime('-1 day'));
+
+          // 1. Today's Bookings Count
+          $query = "SELECT COUNT(*) as count FROM BRANCH_BOOKING 
+          WHERE scheduled_date = '$today'";
+          $result = $conn->query($query);
+          $today_bookings_count = $result->fetch_assoc()['count'];
+
+          // Yesterday's Bookings Count for comparison
+          $query = "SELECT COUNT(*) as count FROM BRANCH_BOOKING 
+          WHERE scheduled_date = '$yesterday'";
+          $result = $conn->query($query);
+          $yesterday_bookings_count = $result->fetch_assoc()['count'];
+
+          if ($yesterday_bookings_count == 0) {
+            $booking_change = $today_bookings_count > 0 ? "New bookings today!" : "Same as yesterday";
+          } else {
+            $change = (($today_bookings_count - $yesterday_bookings_count) / $yesterday_bookings_count) * 100;
+            $booking_change = round($change, 2) . "% vs yesterday";
+          }
+
+          // 2. Today's Revenue
+          $query = "SELECT SUM(b.total_RM) as total FROM BRANCH_BOOKING b
+          JOIN PAYMENT p ON b.booking_id = p.booking_id
+          WHERE b.scheduled_date = '$today'
+          AND p.status = 'Completed'";
+          $result = $conn->query($query);
+          $today_revenue = $result->fetch_assoc()['total'] ?? 0;
+
+          // Yesterday's Revenue for comparison
+          $query = "SELECT SUM(b.total_RM) as total FROM BRANCH_BOOKING b
+          JOIN PAYMENT p ON b.booking_id = p.booking_id
+          WHERE b.scheduled_date = '$yesterday'
+          AND p.status = 'Completed'";
+          $result = $conn->query($query);
+          $yesterday_revenue = $result->fetch_assoc()['total'] ?? 0;
+
+          if ($yesterday_revenue == 0) {
+            $revenue_change = $today_revenue > 0 ? "New revenue today!" : "Same as yesterday";
+          } else {
+            $change = (($today_revenue - $yesterday_revenue) / $yesterday_revenue) * 100;
+            $revenue_change = round($change, 2) . "% vs yesterday";
+          }
+
+          // 3. Pending Bookings
+          $query = "SELECT COUNT(*) as count FROM BRANCH_BOOKING 
+          WHERE status = 'Pending'";
+          $result = $conn->query($query);
+          $pending_bookings_count = $result->fetch_assoc()['count'];
+
+          // 4. Available Cleaners
+          $query = "SELECT COUNT(*) as count FROM BRANCH_STAFF 
+          WHERE role = 'Cleaner' 
+          AND status = 'Active'";
+          $result = $conn->query($query);
+          $available_cleaners_count = $result->fetch_assoc()['count'];
+
+          // Total cleaners in branch
+          $query = "SELECT COUNT(*) as count FROM BRANCH_STAFF
+          WHERE role = 'Cleaner'";
+          $result = $conn->query($query);
+          $total_cleaners_count = $result->fetch_assoc()['count'];
+
+          // 5. Weekly Revenue Data (last 7 days)
+          $weekly_revenue = [];
+          for ($i = 6; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $day_name = date('D', strtotime($date));
+
+            $query = "SELECT SUM(b.total_RM) as total FROM BRANCH_BOOKING b
+              JOIN PAYMENT p ON b.booking_id = p.booking_id
+              WHERE b.scheduled_date = '$date'
+              AND p.status = 'Completed'";
+            $result = $conn->query($query);
+            $weekly_revenue[$day_name] = $result->fetch_assoc()['total'] ?? 0;
+          }
+
+          // 6. Service Popularity (branch-specific)
+          $query = "SELECT s.name, COUNT(bs.service_id) as count 
+          FROM BRANCH_BOOKING b
+          JOIN BOOKING_SERVICE bs ON b.booking_id = bs.booking_id
+          JOIN ADDITIONAL_SERVICE s ON bs.service_id = s.service_id
+          GROUP BY s.name
+          ORDER BY count DESC
+          LIMIT 4";
+          $result = $conn->query($query);
+          $popular_services = $result->fetch_all(MYSQLI_ASSOC);
+          ?>
+
+          <!-- Metric Card -->
           <div class="row">
-            <div class="col-md-6 grid-margin transparent">
+            <div class="col-md-12 grid-margin transparent">
               <div class="row">
-                <div class="col-md-6 mb-4 stretch-card transparent">
+                <!-- Today's Bookings -->
+                <div class="col-md-3 mb-4 stretch-card transparent">
                   <div class="card card-tale">
                     <div class="card-body">
                       <p class="mb-4">Today’s Bookings</p>
-                      <p class="fs-30 mb-2"></p> <!-- show how many -->
-                      <p></p> <!-- show percentage (not sure per what) -->
+                      <p class="fs-30 mb-2"><?= $today_bookings_count ?></p> <!-- show how many -->
+                      <p><?= $booking_change ?></p> <!-- show percentage (not sure per what) -->
                     </div>
                   </div>
+                </div>
+
+                <!-- Today's Revenue -->
+                <div class="col-md-3 mb-4 stretch-card transparent">
+                  <div class="card card-dark-blue">
+                    <div class="card-body">
+                      <p class="mb-4">Today's Revenue</p>
+                      <p class="fs-30 mb-2">RM <?= number_format($today_revenue, 2) ?></p>
+                      <p><?= $revenue_change ?></p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Pending Bookings -->
+                <div class="col-md-3 mb-4 stretch-card transparent">
+                  <div class="card card-light-danger">
+                    <div class="card-body">
+                      <p class="mb-4">Pending Bookings</p>
+                      <p class="fs-30 mb-2"><?= $pending_bookings_count ?></p>
+                      <p>Need attention</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Available Cleaners -->
+                <div class="col-md-3 mb-4 stretch-card transparent">
+                  <div class="card card-light-blue">
+                    <div class="card-body">
+                      <p class="mb-4">Active Cleaners</p>
+                      <p class="fs-30 mb-2"><?= $available_cleaners_count ?></p>
+                      <p>Out of <?= $total_cleaners_count ?> total</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div class="row">
+            <!-- Weekly Revenue Chart -->
+            <div class="col-lg-6 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">Weekly Revenue Trend</h4>
+                  <canvas id="weeklyRevenueChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Popularity Chart -->
+            <div class="col-lg-6 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">Service Popularity</h4>
+                  <canvas id="servicePopularityChart"></canvas>
                 </div>
               </div>
             </div>
@@ -146,12 +299,96 @@ if (!isset($_SESSION['staff_id'])) {
     </div>
   </div>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Weekly Revenue Chart
+      if ($("#weeklyRevenueChart").length) {
+        var ctx = $("#weeklyRevenueChart").get(0).getContext("2d");
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: <?php echo json_encode(array_keys($weekly_revenue)); ?>,
+            datasets: [{
+              label: 'Revenue (RM)',
+              data: <?php echo json_encode(array_values($weekly_revenue)); ?>,
+              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return 'RM ' + context.parsed.y.toFixed(2);
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return 'RM ' + value;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Service Popularity Chart
+      if ($("#servicePopularityChart").length) {
+        var ctx = $("#servicePopularityChart").get(0).getContext("2d");
+        new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: <?php echo json_encode(array_column($popular_services, 'name')); ?>,
+            datasets: [{
+              data: <?php echo json_encode(array_column($popular_services, 'count')); ?>,
+              backgroundColor: [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(75, 192, 192, 0.7)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'right',
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return context.label + ': ' + context.raw + ' bookings';
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+    });
+  </script>
+
   <!-- javascript files -->
   <script src="../vendors/js/vendor.bundle.base.js"></script>
   <script src="../js/off-canvas.js"></script>
   <script src="../js/hoverable-collapse.js"></script>
   <script src="../js/template.js"></script>
+  <script src="../js/settings.js"></script>
   <script src="../js/dashboard.js"></script>
+  <script src="../vendors/chart.js/Chart.min.js"></script>
 </body>
 
 </html>

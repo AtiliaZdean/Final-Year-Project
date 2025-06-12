@@ -1,5 +1,21 @@
 <?php
 session_start();
+include('../dbconnection.php');
+
+// Check if the user is logged in
+if (!isset($_SESSION['staff_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$conn->query("SET @current_user_branch = '" . $conn->real_escape_string($_SESSION['branch']) . "'");
+
+// Fetch user's data
+$stmt = $conn->prepare("SELECT * FROM branch_staff WHERE staff_id = ?");
+$stmt->bind_param("s", $_SESSION['staff_id']);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
 ?>
 
 <!DOCTYPE html>
@@ -9,7 +25,7 @@ session_start();
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>HygieiaHub Sign Up</title>
+    <title>HygieiaHub Profile</title>
 
     <!-- css files -->
     <link rel="stylesheet" href="..\vendors\feather\feather.css">
@@ -31,40 +47,34 @@ session_start();
                             </div>
                             <h4>Your Profile</h4>
                             <!-- Form section -->
-                            <form class="forms-sample" action="dbconnection/dbprofile.php" method="POST" onsubmit="return confirmAction(event)">
+                            <form class="forms-sample" action="dbconnection/dbmanagestaff.php" method="POST" onsubmit="return confirmAction(event)">
 
-                                <!-- Service name -->
+                                <input type="hidden" name="StaffId" id="StaffId" value="<?= htmlspecialchars($user['staff_id']); ?>">
+                                <input type="hidden" name="Role" id="Role" value="<?= htmlspecialchars($user['role']); ?>">
+
+                                <!-- Name -->
                                 <div class="form-group">
-                                    <label for="Name">Name<span class="text-danger"> *</span></label>
-                                    <input type="text" class="form-control" name="Name" id="Name" placeholder="Service Name" required>
+                                    <label for="Name">Name</label>
+                                    <input type="text" class="form-control" name="Name" id="Name" value="<?= htmlspecialchars($user['name']); ?>" required>
                                 </div>
 
-                                <!-- Description -->
+                                <!-- Phone Number -->
                                 <div class="form-group">
-                                    <label for="Description">Description</label>
-                                    <textarea class="form-control" name="Description" id="Description" placeholder="Service Description" rows="4"></textarea>
+                                    <label for="PhoneNumber">Phone Number</label>
+                                    <input type="text" class="form-control" name="PhoneNumber" id="PhoneNumber" maxlength="10" value="<?= htmlspecialchars($user['phone_number']); ?>" required pattern="[0-9]+" title="Only numbers are allowed." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                 </div>
 
-                                <!-- Price -->
-                                <div class="form-group">
-                                    <label for="Price">Price<span class="text-danger"> *</span></label>
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text bg-primary text-white">RM</span>
-                                        </div>
-                                        <input type="text" class="form-control" name="Price" id="Price" maxlength="6" placeholder="Service Price" required pattern="^\d+(\.\d{1,2})?$" onblur="formatPrice(this)">
-                                    </div>
+                                <!-- Email -->
+                                <div class="form-group" id="emailGroup">
+                                    <label for="Email">Email</label>
+                                    <input type="email" class="form-control" name="Email" id="Email" value="<?= htmlspecialchars($user['email']); ?>" required>
                                 </div>
 
-                                <!-- Duration -->
-                                <div class="form-group">
-                                    <label for="Duration">Duration<span class="text-danger"> *</span></label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" name="Duration" id="Duration" maxlength="5" placeholder="Service Duration" required pattern="^\d+(\.\d{1,2})?$" onblur="formatPrice(this)">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text bg-primary text-white">hour</span>
-                                        </div>
-                                    </div>
+                                <!-- Password -->
+                                <div class="form-group" id="passwordGroup">
+                                    <label for="Password">Password</label><!-- <i class="ti-info-alt text-muted"> -->
+                                    <input type="password" class="form-control" name="Password" id="Password" placeholder="Leave blank to keep current password">
+                                    <small class="form-text text-muted">Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.</small>
                                 </div>
 
                                 <?php
@@ -89,47 +99,22 @@ session_start();
                                 }
                                 ?>
 
-                                <button type="submit" class="btn btn-primary mr-2">Add</button>
-                                <input type="reset" class="btn btn-light" value="Reset">
+                                <button type="submit" class="btn btn-primary mr-2" name="update">Update</button>
+                                <a href="dashboard.php" class="btn btn-light">Back</a>
                             </form>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- content-wrapper ends -->
         </div>
-        <!-- page-body-wrapper ends -->
     </div>
 
     <!-- Function Javascripts -->
     <script>
-        // Generate city options based on state selected
-        function updateCities() {
-            const stateSelect = document.getElementById('State');
-            const citySelect = document.getElementById('City');
+        // Action confirmation popup
+        function confirmAction(event) {
+            return confirm("Are you sure you want to update your profile?");
 
-            // Clear existing cities
-            citySelect.innerHTML = '<option value="" disabled selected hidden>City</option>';
-            const selectedState = stateSelect.value;
-            let cities = [];
-
-            if (selectedState === 'Melaka') {
-                cities = ['Ayer Keroh', 'Batu Berendam', 'Bukit Baru', 'Melaka City'];
-            } else if (selectedState === 'Negeri Sembilan') {
-                cities = ['Seremban', 'Port Dickson', 'Nilai', 'Tampin'];
-            }
-
-            // Populate city dropdown
-            cities.forEach(function(city) {
-                const option = document.createElement('option');
-                option.value = city;
-                option.textContent = city;
-                citySelect.appendChild(option);
-            });
-        }
-
-        // Submit form
-        function validateForm() {
             return true;
         }
     </script>

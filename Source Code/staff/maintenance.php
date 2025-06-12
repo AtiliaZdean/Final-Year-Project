@@ -15,6 +15,8 @@ $backupDir = 'C:\xampp\htdocs\MyPHPSite\HygieiaHub\backup';
 
 // Handle backup request
 if (isset($_POST['Backup'])) {
+    date_default_timezone_set('Asia/Kuala_Lumpur');
+
     $mysqldumpPath = 'C:\xampp\mysql\bin\mysqldump.exe';
     $backupFile = $backupDir . '\\' . $dbName . '_' . date('d-m-Y_H-i-s') . '.sql';
     $command = "\"$mysqldumpPath\" --user={$dbUser} {$dbName} > \"{$backupFile}\" 2>&1";
