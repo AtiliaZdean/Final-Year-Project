@@ -1,6 +1,13 @@
 #DDL
 #MySQL
 
+CREATE TABLE HOUSE_TYPE (
+  house_id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL UNIQUE,
+  base_hourly_rate DECIMAL(6,2) NOT NULL,
+  min_hours DECIMAL(4,2) NOT NULL
+);
+
 CREATE TABLE CUSTOMER (
   customer_id INT(11) AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
@@ -10,7 +17,9 @@ CREATE TABLE CUSTOMER (
   address VARCHAR(300) NOT NULL,
   city VARCHAR(300) NOT NULL,
   state VARCHAR(300) NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  house_id INT(11) NOT NULL,  --customer set when registering
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (house_id) REFERENCES HOUSE_TYPE(house_id)
 );
 
 CREATE TABLE STAFF (
@@ -36,20 +45,18 @@ CREATE TABLE ADDITIONAL_SERVICE (
 CREATE TABLE BOOKING (
   booking_id INT(11) AUTO_INCREMENT PRIMARY KEY,
   customer_id INT(11) NOT NULL,
-  total_area DECIMAL(20,4) NOT NULL,
-  no_of_bedrooms INT(2) NOT NULL,
-  no_of_bathrooms INT(2) NOT NULL,
-  no_of_livingroooms INT(2) NOT NULL,
-  size_of_kitchen DECIMAL(20,4) NOT NULL,
-  pet VARCHAR(3) NOT NULL,
-  no_of_cleaners INT(2) NOT NULL,
+  house_id INT(11) NOT NULL,
+  address VARCHAR(1000) NOT NULL,
+  hours_booked DECIMAL(4,2) NOT NULL,
+  no_of_cleaners INT(2) NOT NULL, --number_of_cleaners
   custom_request VARCHAR(300),
-  total_RM DECIMAL(5,2) NOT NULL,
-  estimated_duration_hour DECIMAL(4,2) NOT NULL,
+  total_RM DECIMAL(6,2) NOT NULL, --total_price
+  estimated_duration_hour DECIMAL(4,2) NOT NULL, --total_duration
   scheduled_date DATE NOT NULL,
   scheduled_time TIME NOT NULL,
   status VARCHAR(9) NOT NULL,
-  FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id)
+  FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id),
+  FOREIGN KEY (house_id) REFERENCES HOUSE_TYPE(house_id)
 );
 
 CREATE TABLE BOOKING_SERVICE (
