@@ -86,9 +86,8 @@ CREATE TABLE PAYMENT (
 CREATE TABLE FEEDBACK (
   feedback_id INT(11) AUTO_INCREMENT PRIMARY KEY,
   booking_id INT(11) NOT NULL,
-  time_rating FLOAT NOT NULL,
-  communication_rating FLOAT NOT NULL,
-  satisfaction_rating FLOAT NOT NULL,
-  comment VARCHAR(300),
+  rating FLOAT NOT NULL,
+  submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  comment VARCHAR(1000),
   FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id)
 );
