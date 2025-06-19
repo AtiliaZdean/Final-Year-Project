@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (isset($_POST['register'])) {
         $email = $_POST['Email'];
-        $raw_password = $_POST['Password'];
+        $raw_password = $_POST['Password'] ?? '';
         $role = $_POST['Role1'];
         $branch = $_POST['Branch1'];
 
@@ -28,13 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 echo "<script>window.location.href = '../managestaff.php';</script>";
                 exit();
             }
+
+            $password = password_hash($raw_password, PASSWORD_DEFAULT);
+
+            // Call stored procedure for registration
+            $conn->query("CALL ManageStaff('insert', 0, '$name', '$email', '$password', '$phone_number', '$branch', '$role', '', '$made_by', @result)");
+            $result = $conn->query("SELECT @result AS result")->fetch_assoc();
+        } else {
+            $conn->query("CALL ManageStaff('insert', 0, '$name', '$email', '', '$phone_number', '$branch', '$role', '', '$made_by', @result)");
+            $result = $conn->query("SELECT @result AS result")->fetch_assoc();
         }
-
-        $password = password_hash($raw_password, PASSWORD_DEFAULT);
-
-        // Call stored procedure for registration
-        $conn->query("CALL ManageStaff('insert', 0, '$name', '$email', '$password', '$phone_number', '$branch', '$role', '', '$made_by', @result)");
-        $result = $conn->query("SELECT @result AS result")->fetch_assoc();
 
         // Success/fail message
         if ($result['result'] == 1) {
@@ -46,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $id = $_POST['StaffId'];
         $status = $_POST['StatusModal'];
         $branch = $_POST['Branch2'];
-        $role = $_POST['Role'] ?? '';
+        $role = $_POST['Role2'] ?? '';
 
         // For admin's update
         if ($role != 'Cleaner') {
@@ -61,16 +64,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
                 $password = password_hash($raw_password, PASSWORD_DEFAULT);
 
-                $conn->query("CALL ManageStaff('update', '$id', '$name', '$email', '$password', '$phone_number', '', '', '', '', @result)");
-                $result = $conn->query("SELECT @result AS result")->fetch_assoc();
-            } else {
-                $conn->query("CALL ManageStaff('update', '$id', '$name', '$email', '', '$phone_number', '', '', '', '', @result)");
-                $result = $conn->query("SELECT @result AS result")->fetch_assoc();
+                $stmt_update = $conn->prepare(
+                    "UPDATE staff SET password = ? WHERE staff_id = ?"
+                );
+                $stmt_update->bind_param("si", $password, $id);
+                $stmt_update->execute();
+                $stmt_update->close();
             }
+
+            $conn->query("CALL ManageStaff('update', '$id', '$name', '$email', '', '$phone_number', '', '', '', '', @result)");
+            $result = $conn->query("SELECT @result AS result")->fetch_assoc();
+
+            $_SESSION['staffname'] = $name;
 
             // Success/fail message
             if ($result['result'] == 1) {
-                $_SESSION['status'] = 'The update is successful.';
+                $_SESSION['status'] = 'Your profile update is successful.';
             } else {
                 $_SESSION['EmailMessage'] = 'Failed to update staff.';
             }
