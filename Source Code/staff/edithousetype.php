@@ -2,40 +2,37 @@
 session_start();
 include('../dbconnection.php');
 
+
 // Check if the user is logged in
 if (!isset($_SESSION['staff_id'])) {
     header("Location: login.php");
     exit();
 }
 
-// Fetch services from the database
-$stmt_select = "SELECT s.service_id, s.name, s.description, s.price_RM, s.duration_hour, sl.made_at, sl.made_by 
-                FROM additional_service s 
-                LEFT JOIN (SELECT sl1.*
-                                FROM additional_service_log sl1
-                                INNER JOIN (SELECT service_id, MAX(made_at) AS latest_log
-                                            FROM additional_service_log
-                                            WHERE action = 'Update'
-                                            GROUP BY service_id
-                                           ) sl2 ON sl1.service_id = sl2.service_id AND sl1.made_at = sl2.latest_log
-                          ) sl ON s.service_id = sl.service_id";
+
+// Fetch house types from the database
+$stmt_select = "SELECT *
+                FROM house_type";
 $result = $conn->query($stmt_select);
-$services = [];
+$houses = [];
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $services[] = $row;
+        $houses[] = $row;
     }
 }
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
+
 
 <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>HygieiaHub Edit Service</title>
+    <title>HygieiaHub Edit House Type</title>
+
 
     <!-- CSS Files -->
     <link rel="stylesheet" href="../vendors/feather/feather.css">
@@ -44,6 +41,7 @@ if ($result->num_rows > 0) {
     <link rel="stylesheet" href="../css/vertical-layout-light/style.css">
     <link rel="shortcut icon" href="../images/favicon.png" />
 </head>
+
 
 <body>
     <div class="container-scroller">
@@ -119,12 +117,14 @@ if ($result->num_rows > 0) {
                         </div>
                     </li>
 
+
                     <!-- Manage Staff Account -->
                     <li class="nav-item">
                         <a class="nav-link" href="managestaff.php">
                             <span class="menu-title">Manage Staff</span>
                         </a>
                     </li>
+
 
                     <!-- Manage Booking -->
                     <li class="nav-item">
@@ -147,6 +147,7 @@ if ($result->num_rows > 0) {
                         </div>
                     </li>
 
+
                     <!-- Maintenance -->
                     <li class="nav-item">
                         <a class="nav-link" href="maintenance.php">
@@ -156,66 +157,66 @@ if ($result->num_rows > 0) {
                 </ul>
             </nav>
 
+
             <!-- content -->
             <div class="main-panel">
                 <div class="content-wrapper">
                     <div class="row">
                         <div class="col-md-12 grid-margin">
-                            <h3 class="font-weight-bold">Service</h3>
+                            <h3 class="font-weight-bold">House Type</h3>
                         </div>
                     </div>
+
 
                     <div class="row">
                         <!-- Edit Form -->
                         <div class="col-8 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
-                                    <h4 class="card-title">Edit Service</h4>
-                                    <form class="forms-sample" action="dbconnection/dbeditservice.php" method="POST" onsubmit="return confirmAction(event)">
+                                    <h4 class="card-title">Edit House Type</h4>
+                                    <form class="forms-sample" action="dbconnection/dbhousetype.php" method="POST" onsubmit="return confirmAction(event)">
 
-                                        <!-- Service name -->
+                                        <!-- House Type name -->
                                         <div class="form-group">
                                             <label for="Name">Name<span class="text-danger"> *</span></label>
                                             <select class="form-control" name="Name" id="Name" required>
-                                                <option value="" disabled selected hidden>Select a service</option>
-                                                <?php foreach ($services as $service): ?>
-                                                    <option value="<?php echo $service['service_id']; ?>" data-description="<?php echo htmlspecialchars($service['description']); ?>" data-price="<?php echo htmlspecialchars($service['price_RM']); ?>" data-duration="<?php echo htmlspecialchars($service['duration_hour']); ?>" data-updated-by="<?php echo htmlspecialchars($service['made_by'] ?? ''); ?>" data-updated-at="<?php echo htmlspecialchars($service['made_at'] ?? ''); ?>">
-                                                        <?php echo htmlspecialchars($service['name']); ?>
+                                                <option value="" disabled selected hidden>Select a house type</option>
+                                                <?php foreach ($houses as $house): ?>
+                                                    <option value="<?php echo $house['house_id']; ?>" data-price="<?php echo htmlspecialchars($house['base_hourly_rate']); ?>" data-duration="<?php echo htmlspecialchars($house['min_hours']); ?>">
+                                                        <?php echo htmlspecialchars($house['name']); ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
 
-                                        <!-- Service ID -->
-                                        <input type="hidden" name="service_id" id="service_id" value="">
 
-                                        <!-- Description -->
-                                        <div class="form-group">
-                                            <label for="Description">Description</label>
-                                            <textarea class="form-control" name="Description" id="Description" placeholder="Service Description" rows="4"></textarea>
-                                        </div>
+                                        <!-- House ID -->
+                                        <input type="hidden" name="house_id" id="house_id" value="">
 
-                                        <!-- Price -->
+
+                                        <!-- Base Hourly Rate -->
                                         <div class="form-group">
-                                            <label for="Price">Price<span class="text-danger"> *</span></label>
+                                            <label for="BaseHourlyRate">Base Hourly Rate<span class="text-danger"> *</span></label>
                                             <div class="input-group">
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text bg-primary text-white">RM</span>
                                                 </div>
-                                                <input type="text" class="form-control" name="Price" id="Price" maxlength="6" placeholder="Service Price" required pattern="^\d+(\.\d{1,2})?$" onblur="formatPrice(this)">
+                                                <input type="text" class="form-control" name="BaseHourlyRate" id="BaseHourlyRate" maxlength="6" placeholder="House Type Hourly Rate" required pattern="^\d+(\.\d{1,2})?$" onblur="formatPrice(this)">
                                             </div>
                                         </div>
 
-                                        <!-- Duration -->
+
+                                        <!-- Minimum Hours -->
                                         <div class="form-group">
-                                            <label for="Duration">Duration<span class="text-danger"> *</span></label>
+                                            <label for="MinimumHours">Minimum Hours<span class="text-danger"> *</span></label>
                                             <div class="input-group">
-                                                <input type="text" class="form-control" name="Duration" id="Duration" maxlength="5" placeholder="Service Duration" required pattern="^\d+(\.\d{1,2})?$" onblur="formatPrice(this)">
+                                                <input type="number" class="form-control" name="MinimumHours" id="MinimumHours" min="1" max="8" step="0.5" placeholder="House Type Minimum Hours" required pattern="^\d+(\.\d{1,2})?$" onblur="formatPrice(this)">
                                                 <div class="input-group-prepend">
-                                                    <span class="input-group-text">hour</span>
+                                                    <span class="input-group-text bg-primary text-white">hours</span>
                                                 </div>
                                             </div>
                                         </div>
+
 
                                         <?php
                                         // Success message
@@ -228,6 +229,7 @@ if ($result->num_rows > 0) {
                                             unset($_SESSION['status']);
                                         }
 
+
                                         // Error message
                                         if (isset($_SESSION['EmailMessage'])) {
                                         ?>
@@ -239,15 +241,8 @@ if ($result->num_rows > 0) {
                                         }
                                         ?>
 
-                                        <!-- Latest Update Information -->
-                                        <div class="row mb-3">
-                                            <div class="col-md-12">
-                                                <small id="latestUpdate" class="text-muted" style="display: none;">No updates made.</small>
-                                            </div>
-                                        </div>
 
                                         <button type="submit" name="update" class="btn btn-primary mr-2">Update</button>
-                                        <button type="submit" name="delete" class="btn btn-danger mr-2">Delete</button>
                                     </form>
                                 </div>
                             </div>
@@ -259,57 +254,36 @@ if ($result->num_rows > 0) {
         </div>
     </div>
 
+
     <!-- Function Javascripts -->
     <script>
-        // Helper function to format datetime as dd-mm-yyyy H:i
-        function formatDateTime(dateTimeString) {
-            const date = new Date(dateTimeString);
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${day}-${month}-${year} ${hours}:${minutes}`;
-        }
-
         // Fill in the data after service selected
         document.getElementById('Name').addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
-            const description = selectedOption.getAttribute('data-description');
-            const price = selectedOption.getAttribute('data-price');
-            const duration = selectedOption.getAttribute('data-duration');
-            const serviceId = selectedOption.value;
-            const updatedBy = selectedOption.getAttribute('data-updated-by');
-            const updatedAt = selectedOption.getAttribute('data-updated-at');
+            const rate = selectedOption.getAttribute('data-price');
+            const minHours = selectedOption.getAttribute('data-duration');
+            const houseId = selectedOption.value;
+
 
             // Fill in the other fields
-            document.getElementById('Description').value = description;
-            document.getElementById('Price').value = price;
-            document.getElementById('Duration').value = duration;
-            document.getElementById('service_id').value = serviceId;
-
-            // Show the latest update information
-            const latestUpdateElement = document.getElementById('latestUpdate');
-            latestUpdateElement.style.display = 'block';
-
-            if (updatedBy && updatedAt) {
-                // Format the date properly
-                const formattedTime = formatDateTime(updatedAt);
-                latestUpdateElement.textContent = `Latest update by ${updatedBy} at ${formattedTime}`;
-            } else {
-                latestUpdateElement.textContent = 'No updates made.';
-            }
+            document.getElementById('BaseHourlyRate').value = rate;
+            document.getElementById('MinimumHours').value = minHours;
+            document.getElementById('house_id').value = houseId;
         });
+
 
         function formatPrice(input) {
             let value = input.value.replace(/[^0-9.]/g, '');
 
+
             // Check if the value has more than one decimal point
             const parts = value.split('.');
+
 
             if (parts.length > 2) {
                 value = parts[0] + '.' + parts[1]; // Keep only the first decimal point
             }
+
 
             if (parts.length === 2) {
                 if (parts[1].length === 0) {
@@ -323,13 +297,16 @@ if ($result->num_rows > 0) {
                 value = parts[0] + '.00';
             }
 
+
             input.value = value; // Update the input value
         }
 
+
         // Prevent form submission if the input is invalid
         document.querySelector('form').addEventListener('submit', function(event) {
-            const priceInput = document.getElementById('Price');
-            const durationInput = document.getElementById('Duration');
+            const priceInput = document.getElementById('BaseHourlyRate');
+            const durationInput = document.getElementById('MinimuHours');
+
 
             if (priceInput.value === '.00') {
                 event.preventDefault();
@@ -341,19 +318,18 @@ if ($result->num_rows > 0) {
             }
         });
 
+
         // Action confirmation popup
         function confirmAction(event) {
             // Check which button was clicked
             const updateButton = event.submitter.name === 'update';
-            const deleteButton = event.submitter.name === 'delete';
             if (updateButton) {
                 return confirm("Are you sure you want to update this service?");
-            } else if (deleteButton) {
-                return confirm("Are you sure you want to delete this service?");
             }
             return true;
         }
     </script>
+
 
     <!-- javascript files -->
     <script src="../vendors/js/vendor.bundle.base.js"></script>
@@ -363,5 +339,6 @@ if ($result->num_rows > 0) {
     <script src="../js/settings.js"></script>
     <script src="../js/dashboard.js"></script>
 </body>
+
 
 </html>

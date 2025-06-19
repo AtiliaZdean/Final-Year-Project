@@ -43,6 +43,10 @@ if (!isset($_SESSION['staff_id'])) {
                             <img src="..\images\profile picture.jpg" alt="profile" />
                         </a>
                         <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+                            <a class="dropdown-item" href="profile.php">
+                                <i class="ti-user text-primary"></i>
+                                Profile
+                            </a>
                             <a class="dropdown-item" href="logout.php">
                                 <i class="ti-power-off text-primary"></i>
                                 Logout
@@ -67,6 +71,20 @@ if (!isset($_SESSION['staff_id'])) {
                         </a>
                     </li>
 
+                    <!-- Manage House Type -->
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="collapse" href="#manage-housetype" aria-expanded="false" aria-controls="manage-housetype">
+                            <span class="menu-title">Manage House Type</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="manage-housetype">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="addhousetype.php">Add House Type</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="edithousetype.php">Edit House Type</a></li>
+                            </ul>
+                        </div>
+                    </li>
+
                     <!-- Manage Service -->
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="collapse" href="#manage-service" aria-expanded="false" aria-controls="manage-service">
@@ -85,7 +103,7 @@ if (!isset($_SESSION['staff_id'])) {
                     <!-- Manage Staff Account -->
                     <li class="nav-item">
                         <a class="nav-link" href="managestaff.php">
-                            <span class="menu-title">Manage Staff Account</span>
+                            <span class="menu-title">Manage Staff</span>
                         </a>
                     </li>
 
@@ -98,9 +116,16 @@ if (!isset($_SESSION['staff_id'])) {
 
                     <!-- Report -->
                     <li class="nav-item">
-                        <a class="nav-link" href="report.php">
+                        <a class="nav-link" data-toggle="collapse" href="#report" aria-expanded="false" aria-controls="report">
                             <span class="menu-title">Report</span>
+                            <i class="menu-arrow"></i>
                         </a>
+                        <div class="collapse" id="report">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="report.php">Sales</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="feedback.php">Feedback</a></li>
+                            </ul>
+                        </div>
                     </li>
 
                     <!-- Maintenance -->
@@ -141,6 +166,7 @@ if (!isset($_SESSION['staff_id'])) {
                                             <option value="Pending">Pending</option>
                                             <option value="Completed">Completed</option>
                                             <option value="Cancelled">Cancelled</option>
+                                            <option value="Attention">Attention</option>
                                         </select>
 
                                         <!-- By payment status -->
@@ -148,6 +174,8 @@ if (!isset($_SESSION['staff_id'])) {
                                             <option value="" disabled selected>Payment status</option>
                                             <option value="Pending">Pending</option>
                                             <option value="Completed">Completed</option>
+                                            <option value="Cancelled">Cancelled</option>
+                                            <option value="Attention">Attention</option>
                                         </select>
 
                                         <button type="submit" class="btn btn-primary btn-sm mr-3">Search</button>
@@ -168,14 +196,14 @@ if (!isset($_SESSION['staff_id'])) {
                                             <thead>
                                                 <tr>
                                                     <th>#</th>
+                                                    <th>Status</th>
+                                                    <th>Payment Status</th>
                                                     <th>Date</th>
                                                     <th>Time</th>
                                                     <th>Address</th>
                                                     <th>Cleaners</th>
                                                     <th>Estimated Duration</th>
                                                     <th>Total</th>
-                                                    <th>Status</th>
-                                                    <th>Payment Status</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -189,13 +217,14 @@ if (!isset($_SESSION['staff_id'])) {
                                                 $conn->query("SET @current_user_branch = '" . $conn->real_escape_string($_SESSION['branch']) . "'");
 
                                                 // Make condition for the SQL query based on filters
-                                                $stmt_list = "SELECT b.*, c.name AS customer_name, c.phone_number, c.address AS customer_address, c.city, c.state,
+                                                $stmt_list = "SELECT b.*, c.name AS customer_name, c.phone_number, h.name AS house,
                                                               GROUP_CONCAT(DISTINCT s.name SEPARATOR ', ') AS cleaners,
                                                               GROUP_CONCAT(DISTINCT asv.name SEPARATOR ', ') AS services,
                                                               p.status AS payment_status,
                                                               bl.made_at, bl.made_by
                                                               FROM branch_booking b
                                                               JOIN CUSTOMER c ON b.customer_id = c.customer_id
+                                                              JOIN HOUSE_TYPE h ON b.house_id = h.house_id
                                                               LEFT JOIN BOOKING_CLEANER bc ON b.booking_id = bc.booking_id
                                                               LEFT JOIN STAFF s ON bc.staff_id = s.staff_id
                                                               LEFT JOIN BOOKING_SERVICE bs ON b.booking_id = bs.booking_id
@@ -222,18 +251,23 @@ if (!isset($_SESSION['staff_id'])) {
                                                 if (!empty($paymentStatus)) {
                                                     $stmt_list .= " AND p.status = '" . $conn->real_escape_string($paymentStatus) . "'";
                                                 }
-                                                $stmt_list .= " GROUP BY b.booking_id ORDER BY b.scheduled_date DESC, b.scheduled_time DESC";
+                                                $stmt_list .= " GROUP BY b.booking_id ORDER BY CASE WHEN b.status = 'Attention' THEN 0 ELSE 1 END, b.scheduled_date DESC, b.scheduled_time DESC";
                                                 $result = $conn->query($stmt_list);
 
                                                 echo "<tr><td colspan='10'>" . $result->num_rows . " rows returned</td></tr>";
                                                 if ($result->num_rows > 0) {
                                                     while ($row = $result->fetch_assoc()) {
+                                                        // Determine row class based on status
+                                                        $rowClass = ($row['status'] == 'Attention') ? 'table-danger' : '';
+
                                                         // Determine badge class for status
                                                         $statusClass = '';
                                                         if ($row['status'] == 'Completed') {
                                                             $statusClass = 'badge-success';
                                                         } elseif ($row['status'] == 'Cancelled') {
                                                             $statusClass = 'badge-danger';
+                                                        } elseif ($row['status'] == 'Attention') {
+                                                            $statusClass = 'text-danger';
                                                         } else {
                                                             $statusClass = 'badge-warning';
                                                         }
@@ -244,6 +278,8 @@ if (!isset($_SESSION['staff_id'])) {
                                                             $paymentStatusClass = 'badge-success';
                                                         } elseif ($row['payment_status'] == 'Cancelled') {
                                                             $paymentStatusClass = 'badge-danger';
+                                                        } elseif ($row['payment_status'] == 'Attention') {
+                                                            $paymentStatusClass = 'text-danger';
                                                         } else {
                                                             $paymentStatusClass = 'badge-warning';
                                                         }
@@ -252,13 +288,9 @@ if (!isset($_SESSION['staff_id'])) {
                                                             $row['booking_id'],
                                                             $row['customer_name'],
                                                             $row['phone_number'],
-                                                            $row['customer_address'] . ', ' . $row['city'] . ', ' . $row['state'],
-                                                            $row['total_area_sqft'],
-                                                            $row['no_of_bedrooms'],
-                                                            $row['no_of_bathrooms'],
-                                                            $row['no_of_livingroooms'],
-                                                            $row['size_of_kitchen_sqft'],
-                                                            $row['pet'],
+                                                            $row['house'],
+                                                            $row['address'],
+                                                            $row['hours_booked'],
                                                             $row['custom_request'] ?? '',
                                                             $row['scheduled_date'],
                                                             $row['scheduled_time'],
@@ -275,24 +307,24 @@ if (!isset($_SESSION['staff_id'])) {
                                                         ];
 
                                                         // JSON encode each argument (to properly escape special chars)
-                                                        $jsArgsEncoded = array_map(function($arg) {
+                                                        $jsArgsEncoded = array_map(function ($arg) {
                                                             return json_encode($arg, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
                                                         }, $jsArgs);
                                                         $jsArgsString = implode(',', $jsArgsEncoded);
 
-                                                        echo "<tr>
+                                                        echo "<tr class='$rowClass'>
                                                             <td style='text-align: center;'>
                                                                 <a class='ti-pencil-alt text-primary' style='text-decoration: none; cursor:pointer;' 
                                                                     onclick='openModal($jsArgsString)'></a>
                                                             </td>
-                                                            <td>" . htmlspecialchars($row["scheduled_date"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["scheduled_time"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["customer_address"] . ', ' . $row["city"] . ', ' . $row["state"]) . "</td>
+                                                            <td style='text-align: center;'><span class='badge $statusClass'>" . htmlspecialchars($row["status"]) . "</span></td>
+                                                            <td style='text-align: center;'><span class='badge $paymentStatusClass'>" . ($row["payment_status"] ?? 'Pending') . "</span></td>
+                                                            <td>" . htmlspecialchars(date('d-m-Y', strtotime($row["scheduled_date"]))) . "</td>
+                                                            <td>" . htmlspecialchars(date('H:i', strtotime($row["scheduled_time"]))) . "</td>
+                                                            <td>" . htmlspecialchars($row["address"]) . "</td>
                                                             <td>" . htmlspecialchars($row["cleaners"]) . "</td>
                                                             <td>" . htmlspecialchars($row["estimated_duration_hour"]) . " hour</td>
                                                             <td>RM " . htmlspecialchars($row["total_RM"]) . "</td>
-                                                            <td style='text-align: center;'><span class='badge $statusClass'>" . htmlspecialchars($row["status"]) . "</span></td>
-                                                            <td style='text-align: center;'><span class='badge $paymentStatusClass'>" . ($row["payment_status"] ?? 'Pending') . "</span></td>
                                                         </tr>";
                                                     }
                                                 } else {
@@ -347,6 +379,16 @@ if (!isset($_SESSION['staff_id'])) {
                                         </div>
 
                                         <div class="row">
+                                            <!-- House Type -->
+                                            <div class="col-md-6">
+                                                <div class="form-group row">
+                                                    <label class="col-sm-3 col-form-label">House Type</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control" id="HouseType" readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <!-- Address -->
                                             <div class="col-md-6">
                                                 <div class="form-group row">
@@ -366,72 +408,21 @@ if (!isset($_SESSION['staff_id'])) {
                                         </div>
 
                                         <div class="row">
-                                            <!-- Total Area -->
+                                            <!-- Hours Booked -->
                                             <div class="col-md-6">
                                                 <div class="form-group row">
-                                                    <label class="col-sm-3 col-form-label">Total Area</label>
+                                                    <label class="col-sm-3 col-form-label">Number of Hours</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control" id="TotalArea" readonly>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="HoursBooked" readonly>
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text bg-primary text-white">hours</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <!-- No Of Bedrooms -->
-                                            <div class="col-md-6">
-                                                <div class="form-group row">
-                                                    <label class="col-sm-3 col-form-label">No Of Bedrooms</label>
-                                                    <div class="col-sm-9">
-                                                        <input type="number" class="form-control" id="NoOfBedrooms" readonly>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <!-- No Of Bathrooms -->
-                                            <div class="col-md-6">
-                                                <div class="form-group row">
-                                                    <label class="col-sm-3 col-form-label">No Of Bathrooms</label>
-                                                    <div class="col-sm-9">
-                                                        <input type="text" class="form-control" id="NoOfBathrooms" readonly>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- No Of Livingrooms -->
-                                            <div class="col-md-6">
-                                                <div class="form-group row">
-                                                    <label class="col-sm-3 col-form-label">No Of Livingrooms</label>
-                                                    <div class="col-sm-9">
-                                                        <input type="text" class="form-control" id="NoOfLivingrooms" readonly>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <!-- Size Of Kitchen -->
-                                            <div class="col-md-6">
-                                                <div class="form-group row">
-                                                    <label class="col-sm-3 col-form-label">Size Of Kitchen</label>
-                                                    <div class="col-sm-9">
-                                                        <input type="text" class="form-control" id="SizeOfKitchen" readonly>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Pet -->
-                                            <div class="col-md-6">
-                                                <div class="form-group row">
-                                                    <label class="col-sm-3 col-form-label">Pets</label>
-                                                    <div class="col-sm-9">
-                                                        <input type="text" class="form-control" id="Pet" readonly>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
                                             <!-- Custom Request -->
                                             <div class="col-md-6">
                                                 <div class="form-group row">
@@ -441,7 +432,9 @@ if (!isset($_SESSION['staff_id'])) {
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
 
+                                        <div class="row">
                                             <!-- Services -->
                                             <div class="col-md-6">
                                                 <div class="form-group row">
@@ -451,9 +444,7 @@ if (!isset($_SESSION['staff_id'])) {
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div class="row">
                                             <!-- Cleaners -->
                                             <div class="col-md-6">
                                                 <div class="form-group row">
@@ -494,7 +485,12 @@ if (!isset($_SESSION['staff_id'])) {
                                                 <div class="form-group row">
                                                     <label class="col-sm-3 col-form-label">Estimated Duration</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control" id="EstimatedDuration" readonly>
+                                                        <div class="input-group">
+                                                            <input type="text" class="form-control" id="EstimatedDuration" readonly>
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text bg-primary text-white">hours</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -508,6 +504,7 @@ if (!isset($_SESSION['staff_id'])) {
                                                             <option value="Pending">Pending</option>
                                                             <option value="Completed">Completed</option>
                                                             <option value="Cancelled">Cancelled</option>
+                                                            <option value="Attention" disabled>Attention</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -527,7 +524,12 @@ if (!isset($_SESSION['staff_id'])) {
                                                 <div class="form-group row">
                                                     <label class="col-sm-3 col-form-label">Total Amount</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control" id="TotalAmount" readonly>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text bg-primary text-white">RM</span>
+                                                            </div>
+                                                            <input type="text" class="form-control" id="TotalAmount" readonly>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -541,6 +543,7 @@ if (!isset($_SESSION['staff_id'])) {
                                                             <option value="Pending">Pending</option>
                                                             <option value="Completed">Completed</option>
                                                             <option value="Cancelled">Cancelled</option>
+                                                            <option value="Attention" disabled>Attention</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -573,22 +576,51 @@ if (!isset($_SESSION['staff_id'])) {
                                         </div>
 
                                         <!-- Buttons -->
-                                        <button type="button" class="btn btn-dark" data-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-primary" id="submitButton">Update</button>
+                                        <div class="row row-center">
+                                            <button type="button" class="btn btn-dark mr-3" data-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-primary" id="submitButton">Update</button>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                <footer class="footer"></footer>
             </div>
-            <footer class="footer"></footer>
         </div>
-    </div>
     </div>
 
     <!-- Function Javascripts -->
     <script>
+        // Helper function to format date as dd-mm-yyyy
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        // Helper function to format time as H:i
+        function formatTime(timeString) {
+            const time = new Date('1970-01-01T' + timeString);
+            const hours = String(time.getHours()).padStart(2, '0');
+            const minutes = String(time.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        // Helper function to format datetime as dd-mm-yyyy H:i
+        function formatDateTime(dateTimeString) {
+            const date = new Date(dateTimeString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${day}-${month}-${year} ${hours}:${minutes}`;
+        }
+
         // Reset all filter dropdowns to their default state
         function resetFilters() {
             document.getElementById('Date').value = '';
@@ -606,23 +638,19 @@ if (!isset($_SESSION['staff_id'])) {
         });
 
         // Open modal when button pressed
-        function openModal(bookingId, customerName, phoneNumber, address, totalArea, noOfBedrooms, noOfBathrooms, noOfLivingrooms, sizeOfKitchen, pet, customRequest, scheduledDate, scheduledTime, estimatedDuration, totalAmount, noOfCleaners, cleaners, services, status, paymentStatus, note, lastUpdatedBy, lastUpdateTime) {
+        function openModal(bookingId, customerName, phoneNumber, house, address, hoursBooked, customRequest, scheduledDate, scheduledTime, estimatedDuration, totalAmount, noOfCleaners, cleaners, services, status, paymentStatus, note, lastUpdatedBy, lastUpdateTime) {
             // Set all the values
             $('#CustomerName').val(customerName);
             $('#PhoneNumber').val(phoneNumber);
+            $('#HouseType').val(house);
             $('#Address').val(address);
-            $('#TotalArea').val(totalArea + ' sqft');
-            $('#NoOfBedrooms').val(noOfBedrooms);
-            $('#NoOfBathrooms').val(noOfBathrooms);
-            $('#NoOfLivingrooms').val(noOfLivingrooms);
-            $('#SizeOfKitchen').val(sizeOfKitchen + ' sqft');
-            $('#Pet').val(pet);
+            $('#HoursBooked').val(hoursBooked);
             $('#NoOfCleaners').val(noOfCleaners);
             $('#CustomRequest').val(customRequest);
-            $('#ScheduledDate').val(scheduledDate);
-            $('#ScheduledTime').val(scheduledTime);
-            $('#EstimatedDuration').val(estimatedDuration + ' hours');
-            $('#TotalAmount').val('RM ' + totalAmount);
+            $('#ScheduledDate').val(formatDate(scheduledDate));
+            $('#ScheduledTime').val(formatTime(scheduledTime));
+            $('#EstimatedDuration').val(estimatedDuration);
+            $('#TotalAmount').val(totalAmount);
             $('#Cleaners').val(cleaners);
             $('#Services').val(services);
             const statusSelect = document.getElementById('StatusModal');
@@ -633,7 +661,7 @@ if (!isset($_SESSION['staff_id'])) {
             $('#BookingId').val(bookingId);
 
             if (lastUpdatedBy && lastUpdateTime) {
-                const formattedTime = new Date(lastUpdateTime).toLocaleString();
+                const formattedTime = formatDateTime(lastUpdateTime);
                 $('#latestUpdate').text(`Latest update by ${lastUpdatedBy} at ${formattedTime}`);
             } else {
                 $('#latestUpdate').text('No updates made.');

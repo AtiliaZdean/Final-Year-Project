@@ -43,6 +43,10 @@ if (!isset($_SESSION['staff_id'])) {
                             <img src="..\images\profile picture.jpg" alt="profile" />
                         </a>
                         <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+                            <a class="dropdown-item" href="profile.php">
+                                <i class="ti-user text-primary"></i>
+                                Profile
+                            </a>
                             <a class="dropdown-item" href="logout.php">
                                 <i class="ti-power-off text-primary"></i>
                                 Logout
@@ -67,6 +71,20 @@ if (!isset($_SESSION['staff_id'])) {
                         </a>
                     </li>
 
+                    <!-- Manage House Type -->
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="collapse" href="#manage-housetype" aria-expanded="false" aria-controls="manage-housetype">
+                            <span class="menu-title">Manage House Type</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="manage-housetype">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="addhousetype.php">Add House Type</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="edithousetype.php">Edit House Type</a></li>
+                            </ul>
+                        </div>
+                    </li>
+
                     <!-- Manage Service -->
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="collapse" href="#manage-service" aria-expanded="false" aria-controls="manage-service">
@@ -85,7 +103,7 @@ if (!isset($_SESSION['staff_id'])) {
                     <!-- Manage Staff Account -->
                     <li class="nav-item">
                         <a class="nav-link" href="managestaff.php">
-                            <span class="menu-title">Manage Staff Account</span>
+                            <span class="menu-title">Manage Staff</span>
                         </a>
                     </li>
 
@@ -98,9 +116,16 @@ if (!isset($_SESSION['staff_id'])) {
 
                     <!-- Report -->
                     <li class="nav-item">
-                        <a class="nav-link" href="report.php">
+                        <a class="nav-link" data-toggle="collapse" href="#report" aria-expanded="false" aria-controls="report">
                             <span class="menu-title">Report</span>
+                            <i class="menu-arrow"></i>
                         </a>
+                        <div class="collapse" id="report">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="report.php">Sales</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="feedback.php">Feedback</a></li>
+                            </ul>
+                        </div>
                     </li>
 
                     <!-- Maintenance -->
@@ -208,7 +233,7 @@ if (!isset($_SESSION['staff_id'])) {
                                                         } else {
                                                             $statusClass = 'badge-danger';
                                                         }
-                                                        
+
                                                         echo "<tr>
                                                             <td style='text-align: center;'>
                                                                 <a class='ti-pencil-alt text-primary' style='text-decoration: none;' onclick=\"openModal('edit', '" . htmlspecialchars($row['staff_id']) . "', '" . htmlspecialchars($row['name']) . "', '" . htmlspecialchars($row['phone_number']) . "', '" . htmlspecialchars($row['branch']) . "', '" . htmlspecialchars($row['role']) . "', '" . htmlspecialchars($row['status']) . "', '" . htmlspecialchars($row['made_at']) . "', '" . htmlspecialchars($row['made_by']) . "')\"></a>
@@ -240,14 +265,12 @@ if (!isset($_SESSION['staff_id'])) {
                                     <h4 class="modal-title" id="staffModalLabel">Register Staff</h4>
 
                                     <form class="pt-3" id="staffForm" method="POST" action="dbconnection/dbmanagestaff.php" onsubmit="return confirmAction(event)">
-                                        <small class="form-text text-muted"><span class="text-danger">*</span> - required</small></br>
-
                                         <input type="hidden" name="StaffId" id="StaffId" value="">
 
                                         <!-- Role -->
                                         <div class="form-group" id="roleGroup1">
-                                            <label for="Role1">Role<span class="text-danger"> *</span></label>
-                                            <select class="form-control" name="Role1" id="Role1" required>
+                                            <label for="Role1">Role</label>
+                                            <select class="form-control" name="Role1" id="Role1" required onchange="toggleAdminFields()">
                                                 <option value="" disabled selected>Role</option>
                                                 <option value="Admin">Admin</option>
                                                 <option value="Cleaner">Cleaner</option>
@@ -256,27 +279,27 @@ if (!isset($_SESSION['staff_id'])) {
 
                                         <!-- Name -->
                                         <div class="form-group">
-                                            <label for="Name">Name<span class="text-danger"> *</span></label>
+                                            <label for="Name">Name</label>
                                             <input type="text" class="form-control" name="Name" id="Name" autocomplete="name" placeholder="Full Name" required pattern="[A-Za-z\s]+" title="Only letters are allowed." oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
                                         </div>
 
                                         <!-- Email -->
-                                        <div class="form-group" id="emailGroup">
-                                            <small class="form-text text-muted">Email and password are not required for cleaner.</small></br>
+                                        <div class="form-group" id="emailGroup" style="display: none;">
+                                            <!-- <small class="form-text text-muted">Email and password are not required for cleaner.</small></br> -->
                                             <label for="Email">Email</label>
-                                            <input type="email" class="form-control" name="Email" id="Email" placeholder="Email">
+                                            <input type="email" class="form-control" name="Email" id="Email" placeholder="Email" required>
                                         </div>
 
                                         <!-- Password -->
-                                        <div class="form-group" id="passwordGroup">
+                                        <div class="form-group" id="passwordGroup" style="display: none;">
                                             <label for="Password">Password</label><!-- <i class="ti-info-alt text-muted"> -->
-                                            <input type="password" class="form-control" name="Password" id="Password" placeholder="Password">
+                                            <input type="password" class="form-control" name="Password" id="Password" placeholder="Password" required>
                                             <small class="form-text text-muted">Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.</small>
                                         </div>
 
                                         <!-- Phone Number -->
                                         <div class="form-group">
-                                            <label for="PhoneNumber">Phone Number<span class="text-danger"> *</span></label>
+                                            <label for="PhoneNumber">Phone Number</label>
                                             <input type="text" class="form-control" name="PhoneNumber" id="PhoneNumber" maxlength="10" placeholder="01xxxxxxxx" required pattern="[0-9]+" title="Only numbers are allowed." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                         </div>
 
@@ -312,7 +335,7 @@ if (!isset($_SESSION['staff_id'])) {
 
                                         <!-- Status -->
                                         <div class="form-group" id="statusGroup">
-                                            <label for="Status">Status<span class="text-danger"> *</span></label>
+                                            <label for="Status">Status</label>
                                             <select class="form-control" name="StatusModal" id="StatusModal">
                                                 <option value="" disabled selected>Status</option>
                                                 <option value="Active">Active</option>
@@ -358,6 +381,37 @@ if (!isset($_SESSION['staff_id'])) {
             }
         });
 
+        // Helper function to format datetime as dd-mm-yyyy H:i
+        function formatDateTime(dateTimeString) {
+            const date = new Date(dateTimeString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${day}-${month}-${year} ${hours}:${minutes}`;
+        }
+
+        function toggleAdminFields() {
+            const roleSelect = document.getElementById('Role1');
+            const emailGroup = document.getElementById('emailGroup');
+            const passwordGroup = document.getElementById('passwordGroup');
+
+            if (roleSelect.value === 'Admin') {
+                emailGroup.style.display = 'block';
+                passwordGroup.style.display = 'block';
+                // Make fields required for Admin
+                document.getElementById('Email').required = true;
+                document.getElementById('Password').required = true;
+            } else {
+                emailGroup.style.display = 'none';
+                passwordGroup.style.display = 'none';
+                // Remove required attribute for non-Admin roles
+                document.getElementById('Email').required = false;
+                document.getElementById('Password').required = false;
+            }
+        }
+
         function openModal(action, id = '', name = '', phone = '', branch = '', role = '', status = '', lastUpdateTime = '', lastUpdatedBy = '') {
             const modalTitle = document.getElementById('staffModalLabel');
             const emailGroup = document.getElementById('emailGroup');
@@ -385,6 +439,8 @@ if (!isset($_SESSION['staff_id'])) {
                 latestUpdate.style.display = 'block';
                 submitButton.textContent = 'Update';
                 submitButton.setAttribute('name', 'update');
+                document.getElementById('Email').required = false;
+                document.getElementById('Password').required = false;
 
                 // Populate fields with existing data
                 document.getElementById('StaffId').value = id;
@@ -399,7 +455,7 @@ if (!isset($_SESSION['staff_id'])) {
                 statusSelect.value = status;
 
                 if (lastUpdatedBy && lastUpdateTime) {
-                    const formattedTime = new Date(lastUpdateTime).toLocaleString();
+                    const formattedTime = formatDateTime(lastUpdateTime);
                     $('#latestUpdate').text(`Latest update by ${lastUpdatedBy} at ${formattedTime}`);
                 } else {
                     $('#latestUpdate').text('No updates made.');

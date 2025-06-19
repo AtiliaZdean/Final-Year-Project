@@ -12,7 +12,7 @@ $conn->query("SET @current_user_branch = '" . $conn->real_escape_string($_SESSIO
 
 // Fetch user's data
 $stmt = $conn->prepare("SELECT * FROM branch_staff WHERE staff_id = ?");
-$stmt->bind_param("s", $_SESSION['staff_id']);
+$stmt->bind_param("i", $_SESSION['staff_id']);
 $stmt->execute();
 $result = $stmt->get_result();
 $user = $result->fetch_assoc();
@@ -50,24 +50,24 @@ $user = $result->fetch_assoc();
                             <form class="forms-sample" action="dbconnection/dbmanagestaff.php" method="POST" onsubmit="return confirmAction(event)">
 
                                 <input type="hidden" name="StaffId" id="StaffId" value="<?= htmlspecialchars($user['staff_id']); ?>">
-                                <input type="hidden" name="Role" id="Role" value="<?= htmlspecialchars($user['role']); ?>">
+                                <input type="hidden" name="Role2" id="Role" value="<?= htmlspecialchars($user['role']); ?>">
 
                                 <!-- Name -->
                                 <div class="form-group">
                                     <label for="Name">Name</label>
-                                    <input type="text" class="form-control" name="Name" id="Name" value="<?= htmlspecialchars($user['name']); ?>" required>
+                                    <input type="text" class="form-control" name="Name" id="Name" placeholder="Full Name"  value="<?= htmlspecialchars($user['name']); ?>" required>
                                 </div>
 
                                 <!-- Phone Number -->
                                 <div class="form-group">
                                     <label for="PhoneNumber">Phone Number</label>
-                                    <input type="text" class="form-control" name="PhoneNumber" id="PhoneNumber" maxlength="10" value="<?= htmlspecialchars($user['phone_number']); ?>" required pattern="[0-9]+" title="Only numbers are allowed." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                    <input type="text" class="form-control" name="PhoneNumber" id="PhoneNumber" maxlength="10" placeholder="Phone Number (01xxxxxxxx)" value="<?= htmlspecialchars($user['phone_number']); ?>" required pattern="[0-9]+" title="Only numbers are allowed." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                 </div>
 
                                 <!-- Email -->
                                 <div class="form-group" id="emailGroup">
                                     <label for="Email">Email</label>
-                                    <input type="email" class="form-control" name="Email" id="Email" value="<?= htmlspecialchars($user['email']); ?>" required>
+                                    <input type="email" class="form-control" name="Email" id="Email" placeholder="Email" value="<?= htmlspecialchars($user['email']); ?>" required>
                                 </div>
 
                                 <!-- Password -->

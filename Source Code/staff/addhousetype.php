@@ -15,7 +15,7 @@ if (!isset($_SESSION['staff_id'])) {
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>HygieiaHub Edit Service</title>
+    <title>HygieiaHub Add House Type</title>
 
     <!-- CSS Files -->
     <link rel="stylesheet" href="../vendors/feather/feather.css">
@@ -141,49 +141,71 @@ if (!isset($_SESSION['staff_id'])) {
                 <div class="content-wrapper">
                     <div class="row">
                         <div class="col-md-12 grid-margin">
-                            <h3 class="font-weight-bold">Service</h3>
+                            <h3 class="font-weight-bold">House Type</h3>
                         </div>
                     </div>
 
                     <div class="row">
-                        <!-- Service List -->
-                        <div class="col-md-12 grid-margin stretch-card">
+                        <!-- Add Form -->
+                        <div class="col-8 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
-                                    <h4 class="card-title">Service List</h4>
-                                    <div class="table-responsive pt-3">
-                                        <table class="table table-bordered table-hover">
-                                            <thead>
-                                                <tr>
-                                                    <th style="text-align: center;">Name</th>
-                                                    <th style="text-align: center;">Description</th>
-                                                    <th style="text-align: center;">Price</th>
-                                                    <th style="text-align: center;">Duration</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php
-                                                include '../dbconnection.php';
-                                                $stmt_list = "SELECT name, description, price_RM, duration_hour FROM additional_service";
-                                                $result = $conn->query($stmt_list);
+                                    <h4 class="card-title">Add House Type</h4>
+                                    <form class="forms-sample" action="dbconnection/dbhousetype.php" method="POST" onsubmit="return confirmAction(event)">
 
-                                                echo "<tr><td colspan='4'>" . $result->num_rows . " rows returned</td></tr>";
-                                                if ($result->num_rows > 0) {
-                                                    while ($row = $result->fetch_assoc()) {
-                                                        echo "<tr>
-                                                            <td>" . htmlspecialchars($row["name"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["description"]) . "</td>
-                                                            <td>RM " . htmlspecialchars($row["price_RM"]) . "</td>
-                                                            <td>" . htmlspecialchars($row["duration_hour"]) . " hour</td>
-                                                        </tr>";
-                                                    }
-                                                } else {
-                                                    echo "<tr><td colspan='4'>No services found</td></tr>";
-                                                }
-                                                ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                        <!-- House Type name -->
+                                        <div class="form-group">
+                                            <label for="Name">Name<span class="text-danger"> *</span></label>
+                                            <input type="text" class="form-control" name="Name" id="Name" placeholder="House Type Name" required>
+                                        </div>
+
+                                        <!-- Base Hourly Rate -->
+                                        <div class="form-group">
+                                            <label for="BaseHourlyRate">Base Hourly Rate<span class="text-danger"> *</span></label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text bg-primary text-white">RM</span>
+                                                </div>
+                                                <input type="text" class="form-control" name="BaseHourlyRate" id="BaseHourlyRate" maxlength="6" placeholder="House Type Hourly Rate" required pattern="^\d+(\.\d{1,2})?$" onblur="formatPrice(this)">
+                                            </div>
+                                        </div>
+
+                                        <!-- Minimum Hours -->
+                                        <div class="form-group">
+                                            <label for="MinimumHours">Minimum Hours<span class="text-danger"> *</span></label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" name="MinimumHours" id="MinimumHours" min="1" max="8" step="0.5" placeholder="House Type Minimum Hours" required pattern="^\d+(\.\d{1,2})?$" onblur="formatPrice(this)">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text bg-primary text-white">hours</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <?php
+                                        // Success message
+                                        if (isset($_SESSION['status'])) {
+                                        ?>
+                                            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                                                <?php echo $_SESSION['status']; ?>
+                                            </div>
+                                        <?php
+                                            unset($_SESSION['status']);
+                                        }
+
+                                        // Error message
+                                        if (isset($_SESSION['EmailMessage'])) {
+                                        ?>
+                                            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                                                <?php echo $_SESSION['EmailMessage']; ?>
+                                            </div>
+                                        <?php
+                                            unset($_SESSION['EmailMessage']);
+                                        }
+                                        ?>
+
+                                        <button type="submit" name="insert" class="btn btn-primary mr-2">Add</button>
+                                        <input type="reset" class="btn btn-light" value="Reset">
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -193,6 +215,56 @@ if (!isset($_SESSION['staff_id'])) {
             </div>
         </div>
     </div>
+
+    <!-- Function Javascripts -->
+    <script>
+        function formatPrice(input) {
+            let value = input.value.replace(/[^0-9.]/g, '');
+
+            // Check if the value has more than one decimal point
+            const parts = value.split('.');
+
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts[1]; // Keep only the first decimal point
+            }
+
+            if (parts.length === 2) {
+                if (parts[1].length === 0) {
+                    value = parts[0] + '.00';
+                } else if (parts[1].length > 2) {
+                    value = parts[0] + '.' + parts[1].substring(0, 2);
+                } else if (parts[1].length === 1) {
+                    value = parts[0] + '.' + parts[1] + '0';
+                }
+            } else if (parts.length === 1) {
+                value = parts[0] + '.00';
+            }
+
+            input.value = value; // Update the input value
+        }
+
+        // Prevent form submission if the input is invalid
+        document.querySelector('form').addEventListener('submit', function(event) {
+            const priceInput = document.getElementById('BaseHourlyRate');
+            const durationInput = document.getElementById('MinimumHours');
+
+            if (priceInput.value === '.00') {
+                event.preventDefault();
+                alert('Please enter a valid price.');
+            }
+            if (durationInput.value === '.00') {
+                event.preventDefault();
+                alert('Please enter a valid duration.');
+            }
+        });
+
+        // Action confirmation popup
+        function confirmAction(event) {
+            return confirm("Are you sure you want to add this house type?");
+
+            return true;
+        }
+    </script>
 
     <!-- javascript files -->
     <script src="../vendors/js/vendor.bundle.base.js"></script>

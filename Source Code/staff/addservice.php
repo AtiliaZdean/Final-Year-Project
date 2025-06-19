@@ -42,6 +42,10 @@ if (!isset($_SESSION['staff_id'])) {
                             <img src="..\images\profile picture.jpg" alt="profile" />
                         </a>
                         <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+                            <a class="dropdown-item" href="profile.php">
+                                <i class="ti-user text-primary"></i>
+                                Profile
+                            </a>
                             <a class="dropdown-item" href="logout.php">
                                 <i class="ti-power-off text-primary"></i>
                                 Logout
@@ -66,6 +70,20 @@ if (!isset($_SESSION['staff_id'])) {
                         </a>
                     </li>
 
+                    <!-- Manage House Type -->
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="collapse" href="#manage-housetype" aria-expanded="false" aria-controls="manage-housetype">
+                            <span class="menu-title">Manage House Type</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="manage-housetype">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="addhousetype.php">Add House Type</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="edithousetype.php">Edit House Type</a></li>
+                            </ul>
+                        </div>
+                    </li>
+
                     <!-- Manage Service -->
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="collapse" href="#manage-service" aria-expanded="false" aria-controls="manage-service">
@@ -84,7 +102,7 @@ if (!isset($_SESSION['staff_id'])) {
                     <!-- Manage Staff Account -->
                     <li class="nav-item">
                         <a class="nav-link" href="managestaff.php">
-                            <span class="menu-title">Manage Staff Account</span>
+                            <span class="menu-title">Manage Staff</span>
                         </a>
                     </li>
 
@@ -97,9 +115,16 @@ if (!isset($_SESSION['staff_id'])) {
 
                     <!-- Report -->
                     <li class="nav-item">
-                        <a class="nav-link" href="report.php">
+                        <a class="nav-link" data-toggle="collapse" href="#report" aria-expanded="false" aria-controls="report">
                             <span class="menu-title">Report</span>
+                            <i class="menu-arrow"></i>
                         </a>
+                        <div class="collapse" id="report">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="report.php">Sales</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="feedback.php">Feedback</a></li>
+                            </ul>
+                        </div>
                     </li>
 
                     <!-- Maintenance -->

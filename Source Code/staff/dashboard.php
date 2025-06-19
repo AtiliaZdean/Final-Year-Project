@@ -70,6 +70,20 @@ if (!isset($_SESSION['staff_id'])) {
             </a>
           </li>
 
+          <!-- Manage House Type -->
+          <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#manage-housetype" aria-expanded="false" aria-controls="manage-housetype">
+              <span class="menu-title">Manage House Type</span>
+              <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="manage-housetype">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item"> <a class="nav-link" href="addhousetype.php">Add House Type</a></li>
+                <li class="nav-item"> <a class="nav-link" href="edithousetype.php">Edit House Type</a></li>
+              </ul>
+            </div>
+          </li>
+
           <!-- Manage Service -->
           <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#manage-service" aria-expanded="false" aria-controls="manage-service">
@@ -88,7 +102,7 @@ if (!isset($_SESSION['staff_id'])) {
           <!-- Manage Staff Account -->
           <li class="nav-item">
             <a class="nav-link" href="managestaff.php">
-              <span class="menu-title">Manage Staff Account</span>
+              <span class="menu-title">Manage Staff</span>
             </a>
           </li>
 
@@ -101,11 +115,17 @@ if (!isset($_SESSION['staff_id'])) {
 
           <!-- Report -->
           <li class="nav-item">
-            <a class="nav-link" href="report.php">
+            <a class="nav-link" data-toggle="collapse" href="#report" aria-expanded="false" aria-controls="report">
               <span class="menu-title">Report</span>
+              <i class="menu-arrow"></i>
             </a>
+            <div class="collapse" id="report">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item"> <a class="nav-link" href="report.php">Sales</a></li>
+                <li class="nav-item"> <a class="nav-link" href="feedback.php">Feedback</a></li>
+              </ul>
+            </div>
           </li>
-
 
           <!-- Maintenance -->
           <li class="nav-item">
@@ -146,7 +166,7 @@ if (!isset($_SESSION['staff_id'])) {
           $yesterday_bookings_count = $result->fetch_assoc()['count'];
 
           if ($yesterday_bookings_count == 0) {
-            $booking_change = $today_bookings_count > 0 ? "New bookings today!" : "Same as yesterday";
+            $booking_change = $today_bookings_count > 0 ? "Booking(s) today!" : "Same as yesterday";
           } else {
             $change = (($today_bookings_count - $yesterday_bookings_count) / $yesterday_bookings_count) * 100;
             $booking_change = round($change, 2) . "% vs yesterday";
@@ -169,7 +189,7 @@ if (!isset($_SESSION['staff_id'])) {
           $yesterday_revenue = $result->fetch_assoc()['total'] ?? 0;
 
           if ($yesterday_revenue == 0) {
-            $revenue_change = $today_revenue > 0 ? "New revenue today!" : "Same as yesterday";
+            $revenue_change = $today_revenue > 0 ? "Revenue today!" : "Same as yesterday";
           } else {
             $change = (($today_revenue - $yesterday_revenue) / $yesterday_revenue) * 100;
             $revenue_change = round($change, 2) . "% vs yesterday";
@@ -194,7 +214,28 @@ if (!isset($_SESSION['staff_id'])) {
           $result = $conn->query($query);
           $total_cleaners_count = $result->fetch_assoc()['count'];
 
-          // 5. Weekly Revenue Data (last 7 days)
+          // 5. Feedback Summary
+          $query = "SELECT COUNT(*) as total_feedback, AVG(rating) as average_rating 
+                    FROM FEEDBACK f 
+                    JOIN BRANCH_BOOKING b ON f.booking_id = b.booking_id 
+                    WHERE b.status = 'Completed' 
+                    AND DATE(f.submitted_at) = '$today'";
+          $result = $conn->query($query);
+          $feedback_data = $result->fetch_assoc();
+          $today_feedback_count = $feedback_data['total_feedback'];
+          $today_average_rating = $feedback_data['average_rating'] ?? 0;
+
+          // 6. Recent Feedback
+          $query = "SELECT f.rating, f.comment, c.name as customer_name 
+                    FROM FEEDBACK f 
+                    JOIN BRANCH_BOOKING b ON f.booking_id = b.booking_id 
+                    JOIN CUSTOMER c ON b.customer_id = c.customer_id 
+                    WHERE b.status = 'Completed' 
+                    ORDER BY f.submitted_at DESC 
+                    LIMIT 5";
+          $recent_feedback = $conn->query($query)->fetch_all(MYSQLI_ASSOC);
+
+          // 7. Weekly Revenue Data (last 7 days)
           $weekly_revenue = [];
           for ($i = 6; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-$i days"));
@@ -208,7 +249,7 @@ if (!isset($_SESSION['staff_id'])) {
             $weekly_revenue[$day_name] = $result->fetch_assoc()['total'] ?? 0;
           }
 
-          // 6. Service Popularity (branch-specific)
+          // 8. Service Popularity (branch-specific)
           $query = "SELECT s.name, COUNT(bs.service_id) as count 
           FROM BRANCH_BOOKING b
           JOIN BOOKING_SERVICE bs ON b.booking_id = bs.booking_id
@@ -223,7 +264,7 @@ if (!isset($_SESSION['staff_id'])) {
           <!-- Metric Card -->
           <div class="row">
             <div class="col-md-12 grid-margin transparent">
-              <div class="row">
+              <div class="row row-center">
                 <!-- Today's Bookings -->
                 <div class="col-md-3 mb-4 stretch-card transparent">
                   <div class="card card-tale">
@@ -267,14 +308,25 @@ if (!isset($_SESSION['staff_id'])) {
                     </div>
                   </div>
                 </div>
+
+                <!-- Average Ratings -->
+                <div class="col-md-6 mb-4 transparent">
+                  <div class="card">
+                    <div class="card-body">
+                      <p class="mb-4">Today's Feedback</p>
+                      <p class="fs-30 mb-2">Average Rating: <?= number_format($today_average_rating, 2) ?> <i class="ti-star text-primary"></i></p>
+                      <p><?= $today_feedback_count ?> Feedbacks</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Chart -->
-          <div class="row">
+          <div class="row row-center">
             <!-- Weekly Revenue Chart -->
-            <div class="col-lg-6 grid-margin stretch-card">
+            <div class="col-lg-6 mb-4 grid-margin stretch-card">
               <div class="card">
                 <div class="card-body">
                   <h4 class="card-title">Weekly Revenue Trend</h4>
@@ -284,11 +336,29 @@ if (!isset($_SESSION['staff_id'])) {
             </div>
 
             <!-- Service Popularity Chart -->
-            <div class="col-lg-6 grid-margin stretch-card">
+            <div class="col-lg-6 mb-4 grid-margin stretch-card">
               <div class="card">
                 <div class="card-body">
                   <h4 class="card-title">Service Popularity</h4>
                   <canvas id="servicePopularityChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Feedback -->
+            <div class="col-md-6 mb-4 stretch-card transparent">
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">Recent Feedback</h4>
+                  <ul class="list-group">
+                    <?php foreach ($recent_feedback as $feedback): ?>
+                      <li class="list-group-item">
+                        <strong><?= htmlspecialchars($feedback['customer_name']) ?></strong><br>
+                        <?= htmlspecialchars($feedback['comment']) ?>
+                        <span class="badge badge-primary float-right"><?= $feedback['rating'] ?> ★</span>
+                      </li>
+                    <?php endforeach; ?>
+                  </ul>
                 </div>
               </div>
             </div>

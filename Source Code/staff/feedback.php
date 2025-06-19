@@ -27,41 +27,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 switch ($periodicity) {
     case 'Daily':
         $date_format = '%Y-%m-%d';
-        $group_format = 'DATE(p.payment_date)';
+        $group_format = 'DATE(f.submitted_at)';
         $default_date = date('Y-m-d');
         break;
     case 'Monthly':
         $date_format = '%Y-%m';
-        $group_format = 'DATE_FORMAT(p.payment_date, "%Y-%m")';
+        $group_format = 'DATE_FORMAT(f.submitted_at, "%Y-%m")';
         $default_date = date('Y-m');
         break;
     case 'Yearly':
         $date_format = '%Y';
-        $group_format = 'YEAR(p.payment_date)';
+        $group_format = 'YEAR(f.submitted_at)';
         $default_date = date('Y');
         break;
     default:
         $date_format = '%Y-%m';
-        $group_format = 'DATE_FORMAT(p.payment_date, "%Y-%m")';
+        $group_format = 'DATE_FORMAT(f.submitted_at, "%Y-%m")';
         $default_date = date('Y-m');
 }
 
 // Get data for the chart (last 12 periods)
 if ($periodicity !== 'Yearly') {
-    $query = "SELECT $group_format AS period, SUM(b.total_RM) AS total_sales
-          FROM PAYMENT p
-          JOIN branch_BOOKING b ON p.booking_id = b.booking_id
-          WHERE p.status = 'Completed'
-          GROUP BY period
-          ORDER BY period DESC
-          LIMIT 12";
+    $query = "SELECT $group_format AS period, AVG(f.rating) AS average_rating
+              FROM FEEDBACK f
+              JOIN BRANCH_BOOKING b ON f.booking_id = b.booking_id
+              WHERE b.status = 'Completed'
+              GROUP BY period
+              ORDER BY period DESC
+              LIMIT 12";
     $result = $conn->query($query);
 
     $chart_labels = [];
     $chart_values = [];
     while ($row = $result->fetch_assoc()) {
         $chart_labels[] = $row['period'];
-        $chart_values[] = $row['total_sales'];
+        $chart_values[] = $row['average_rating'];
     }
 
     // Reverse to show chronological order
@@ -70,21 +70,20 @@ if ($periodicity !== 'Yearly') {
 }
 
 // Get data for the table (selected period)
-$query = "SELECT 
-            DATE_FORMAT(p.payment_date, '$date_format') AS period,
-            COUNT(p.payment_id) AS total_bookings,
-            SUM(b.total_RM) AS total_sales,
-            AVG(b.total_RM) AS average_sale
-          FROM PAYMENT p
-          JOIN branch_BOOKING b ON p.booking_id = b.booking_id
-          WHERE p.status = 'completed'";
+$query = "SELECT
+            DATE_FORMAT(f.submitted_at, '$date_format') AS period,
+            COUNT(f.feedback_id) AS total_feedback,
+            AVG(f.rating) AS average_rating
+          FROM FEEDBACK f
+          JOIN BRANCH_BOOKING b ON f.booking_id = b.booking_id
+          WHERE b.status = 'Completed'";
 
 if ($periodicity === 'Daily') {
-    $query .= " AND DATE(p.payment_date) = '" . $conn->real_escape_string($selected_date) . "'";
+    $query .= " AND DATE(f.submitted_at) = '" . $conn->real_escape_string($selected_date) . "'";
 } elseif ($periodicity === 'Monthly') {
-    $query .= " AND DATE_FORMAT(p.payment_date, '%Y-%m') = '" . $conn->real_escape_string($selected_date) . "'";
+    $query .= " AND DATE_FORMAT(f.submitted_at, '%Y-%m') = '" . $conn->real_escape_string($selected_date) . "'";
 } elseif ($periodicity === 'Yearly') {
-    $query .= " AND YEAR(p.payment_date) = '" . $conn->real_escape_string($selected_date) . "'";
+    $query .= " AND YEAR(f.submitted_at) = '" . $conn->real_escape_string($selected_date) . "'";
 }
 
 $query .= " GROUP BY period";
@@ -225,7 +224,7 @@ $table_data = $result->fetch_assoc();
                 <div class="content-wrapper">
                     <div class="row">
                         <div class="col-md-12 grid-margin">
-                            <h3 class="font-weight-bold">Sales Report</h3>
+                            <h3 class="font-weight-bold">Feedback Report</h3>
                             <h6 class="font-weight-normal mb-0">Branch: <?php echo htmlspecialchars($_SESSION['branch']); ?></h6>
                         </div>
                     </div>
@@ -267,28 +266,26 @@ $table_data = $result->fetch_assoc();
                         <div class="col-lg-6 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
-                                    <h4 class="card-title">Sales Summary</h4>
+                                    <h4 class="card-title">Feedback Summary</h4>
                                     <div class="table-responsive pt-3">
                                         <table class="table table-bordered table-hover">
                                             <thead>
                                                 <tr>
                                                     <th>Period</th>
-                                                    <th>Total Bookings</th>
-                                                    <th>Total Sales (RM)</th>
-                                                    <th>Average Sale (RM)</th>
+                                                    <th>Total Feedback</th>
+                                                    <th>Average Rating</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <?php if ($table_data): ?>
                                                     <tr>
                                                         <td><?php echo htmlspecialchars($table_data['period']); ?></td>
-                                                        <td><?php echo htmlspecialchars($table_data['total_bookings']); ?></td>
-                                                        <td><?php echo number_format($table_data['total_sales'], 2); ?></td>
-                                                        <td><?php echo number_format($table_data['average_sale'], 2); ?></td>
+                                                        <td><?php echo htmlspecialchars($table_data['total_feedback']); ?></td>
+                                                        <td><?php echo number_format($table_data['average_rating'], 2); ?></td>
                                                     </tr>
                                                 <?php else: ?>
                                                     <tr>
-                                                        <td colspan="4" class="text-center">No data available for the selected period</td>
+                                                        <td colspan="3" class="text-center">No data available for the selected period</td>
                                                     </tr>
                                                 <?php endif; ?>
                                             </tbody>
@@ -302,8 +299,54 @@ $table_data = $result->fetch_assoc();
                         <div id="chart-container" class="col-lg-6 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
-                                    <h4 class="card-title">Sales Trend (Last 12 <?php echo strtolower($periodicity === 'Yearly' ? 'Years' : ($periodicity === 'Monthly' ? 'Months' : 'Days')); ?>)</h4>
+                                    <h4 class="card-title">Feedback Trend (Last 12 <?php echo strtolower($periodicity === 'Yearly' ? 'Years' : ($periodicity === 'Monthly' ? 'Months' : 'Days')); ?>)</h4>
                                     <canvas id="areaChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 grid-margin stretch-card">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h4 class="card-title">Detailed Feedback</h4>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Customer</th>
+                                                    <th>Booking ID</th>
+                                                    <th>Rating</th>
+                                                    <th>Comment</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php
+                                                $query = "SELECT f.rating, f.comment, f.submitted_at, 
+                                     c.name as customer_name, b.booking_id
+                                     FROM FEEDBACK f
+                                     JOIN BRANCH_BOOKING b ON f.booking_id = b.booking_id
+                                     JOIN CUSTOMER c ON b.customer_id = c.customer_id
+                                     WHERE DATE_FORMAT(f.submitted_at, '$date_format') = ?";
+                                                $stmt = $conn->prepare($query);
+                                                $stmt->bind_param("s", $selected_date);
+                                                $stmt->execute();
+                                                $result = $stmt->get_result();
+                                                while ($row = $result->fetch_assoc()) {
+                                                    echo "<tr>
+                                    <td>{$row['submitted_at']}</td>
+                                    <td>{$row['customer_name']}</td>
+                                    <td>{$row['booking_id']}</td>
+                                    <td>{$row['rating']}★</td>
+                                    <td>{$row['comment']}</td>
+                                </tr>";
+                                                }
+                                                ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -374,10 +417,10 @@ $table_data = $result->fetch_assoc();
                 var areaData = {
                     labels: <?php echo json_encode($chart_labels); ?>,
                     datasets: [{
-                        label: 'Sales (RM)',
+                        label: 'Average Rating',
                         data: <?php echo json_encode($chart_values); ?>,
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                        borderColor: 'rgba(255, 206, 86, 1)',
                         borderWidth: 1,
                         fill: true
                     }]
