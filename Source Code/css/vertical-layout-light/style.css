@@ -13819,6 +13819,10 @@ input[type="button"].btn-block {
   transition: all 0.3s ease;
 }
 
+.no-collapse {
+  pointer-events: none;
+}
+
 .card-content {
   display: none;
   overflow: hidden;
@@ -15176,6 +15180,12 @@ a.close.disabled {
   }
   .modal-sm {
     max-width: 300px;
+  }
+}
+
+@media (min-width: 500px) {
+  .modal-md {
+    max-width: 60%;
   }
 }
 
@@ -19088,7 +19098,7 @@ a.text-dark:hover, a.text-dark:focus {
     page-break-after: avoid;
   }
   @page {
-    size: a3;
+    size: a4;
   }
   body {
     min-width: 992px !important;
@@ -19096,7 +19106,7 @@ a.text-dark:hover, a.text-dark:focus {
   .container {
     min-width: 992px !important;
   }
-  .navbar {
+  .navbar, .nav-item, .navbar-nav, .navbar-toggler, .btn {
     display: none;
   }
   .badge {
@@ -27576,6 +27586,41 @@ table.dataTable tbody td.select-checkbox:after {
 .br-theme-bars-pill .br-widget a {
   line-height: 2.5;
 }
+
+.star-rating {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+    }
+    
+    .star-rating input {
+        display: none;
+    }
+    
+    .star-rating label {
+        color: #ccc;
+        cursor: pointer;
+        font-size: 1.5em;
+        padding: 0 2px;
+    }
+    
+    .star-rating :checked ~ label,
+    .star-rating label:hover,
+    .star-rating label:hover ~ label {
+        color: #ffc107;
+    }
+    
+    .star-rating-container {
+        pointer-events: auto;
+    }
+    
+    .rating-locked label {
+        cursor: default !important;
+    }
+    
+    .rating-locked :checked ~ label {
+        color: #ffc107 !important;
+    }
 
 /* Select2 */
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
