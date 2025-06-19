@@ -43,6 +43,26 @@ session_start();
                   <input type="text" class="form-control" name="PhoneNumber" id="PhoneNumber" maxlength="10" placeholder="Phone Number (01xxxxxxxx)" required pattern="[0-9]+" title="Only numbers are allowed." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 </div>
 
+                <!-- House Type -->
+                <div class="form-group">
+                  <select class="form-control" name="HouseType" id="HouseType" required>
+                    <option value="" disabled selected>House Type</option>
+                    <?php
+                    include('../dbconnection.php');
+
+                    // Fetch house types from HOUSE_TYPE table
+                    $sql = "SELECT house_id, name FROM HOUSE_TYPE";
+                    $result = $conn->query($sql);
+
+                    while ($row = $result->fetch_assoc()) {
+                      echo '<option value="' . $row["house_id"] . '">' . $row["name"] . '</option>';
+                    }
+
+                    $conn->close();
+                    ?>
+                  </select>
+                </div>
+
                 <!-- Address -->
                 <div class="form-group">
                   <input type="text" class="form-control" name="Address" id="Address" placeholder="Address" required>

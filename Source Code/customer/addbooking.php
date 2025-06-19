@@ -1,5 +1,15 @@
 <?php
 session_start();
+include('../dbconnection.php');
+
+// Get house types directly in PHP
+$houseTypes = [];
+$stmt = $conn->prepare("SELECT * FROM HOUSE_TYPE");
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $houseTypes[$row['house_id']] = $row;
+}
 ?>
 
 <!DOCTYPE html>
@@ -32,6 +42,13 @@ session_start();
                     <li class="nav-item">
                         <a class="nav-link" href="home.php">
                             <span class="menu-title">Home</span>
+                        </a>
+                    </li>
+
+                    <!-- Community -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="community.php">
+                            <span class="menu-title">Community</span>
                         </a>
                     </li>
 
@@ -68,6 +85,10 @@ session_start();
                                 <img src="..\images\profile picture.jpg" alt="profile" />
                             </a>
                             <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+                                <a class="dropdown-item" href="profile.php">
+                                    <i class="ti-user text-primary"></i>
+                                    Profile
+                                </a>
                                 <a class="dropdown-item" href="logout.php">
                                     <i class="ti-power-off text-primary"></i>
                                     Logout
@@ -119,6 +140,7 @@ session_start();
                                                     </div>
                                                 </div>
                                             </div>
+
                                             <div class="row">
                                                 <?php
                                                 $address = $_SESSION['address'] . ', ' . $_SESSION['city'] . ', ' . $_SESSION['state'];
@@ -132,98 +154,31 @@ session_start();
                                                 </div>
                                                 <input type="hidden" name="City" id="City" value="<?php echo $_SESSION['city']; ?>">
 
-                                                <!-- Total Area -->
+                                                <!-- House Type -->
                                                 <div class="col-md-6">
                                                     <div class="form-group">
-                                                        <label for="TotalArea">Total Area<span class="text-danger"> *</span></label>
-                                                        <div class="input-group">
-                                                            <input type="text" class="form-control" name="TotalArea" id="TotalArea" required>
-                                                            <div class="input-group-prepend">
-                                                                <span class="input-group-text bg-primary text-white">sq ft</span>
-                                                            </div>
-                                                        </div>
+                                                        <label for="HouseType">House Type<span class="text-danger"> *</span></label>
+                                                        <input type="text" class="form-control" value="<?php
+                                                                                                        $stmt = $conn->prepare("SELECT name FROM HOUSE_TYPE WHERE house_id = ?");
+                                                                                                        $stmt->bind_param("i", $_SESSION['house_id']);
+                                                                                                        $stmt->execute();
+                                                                                                        $result = $stmt->get_result();
+                                                                                                        echo $result->fetch_assoc()['name'];
+                                                                                                        ?>" readonly>
+                                                        <input type="hidden" name="HouseType" id="HouseType" value="<?php echo $_SESSION['house_id']; ?>">
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <!-- Number of Bedrooms -->
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label for="NoOfBedrooms">Number Of Bedrooms<span class="text-danger"> *</span></label>
-                                                        <select type="text" class="form-control" name="NoOfBedrooms" id="NoOfBedrooms" required>
-                                                            <option value="" disabled selected>Select number of bedrooms</option>
-                                                            <option value="0">None</option>
-                                                            <option value="1">1</option>
-                                                            <option value="2">2</option>
-                                                            <option value="3">3</option>
-                                                            <option value="4">4</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
 
-                                                <!-- Number of Bathrooms -->
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label for="NoOfBathrooms">Number Of Bathrooms<span class="text-danger"> *</span></label>
-                                                        <select type="text" class="form-control" name="NoOfBathrooms" id="NoOfBathrooms" required>
-                                                            <option value="" disabled selected>Select number of bathrooms</option>
-                                                            <option value="0">None</option>
-                                                            <option value="1">1</option>
-                                                            <option value="2">2</option>
-                                                            <option value="3">3</option>
-                                                            <option value="4">4</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
                                             <div class="row">
-                                                <!-- Number of Livingrooms -->
+                                                <!-- Hours Booked -->
                                                 <div class="col-md-6">
                                                     <div class="form-group">
-                                                        <label for="NoOfLivingrooms">Number Of Livingrooms<span class="text-danger"> *</span></label>
-                                                        <select type="text" class="form-control" name="NoOfLivingrooms" id="NoOfLivingrooms" required>
-                                                            <option value="" disabled selected>Select number of livingrooms</option>
-                                                            <option value="0">None</option>
-                                                            <option value="1">1</option>
-                                                            <option value="2">2</option>
-                                                            <option value="3">3</option>
-                                                            <option value="4">4</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Size of Kitchen -->
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label for="SizeOfKitchen">Size Of Kitchen<span class="text-danger"> *</span></label>
+                                                        <label for="HoursBooked">Number of Hours<span class="text-danger"> *</span></label>
                                                         <div class="input-group">
-                                                            <input type="text" class="form-control" name="SizeOfKitchen" id="SizeOfKitchen" required>
+                                                            <input type="number" class="form-control" name="HoursBooked" id="HoursBooked" min="1" max="8" step="0.5" onchange="validateTotalDuration()" required>
                                                             <div class="input-group-prepend">
-                                                                <span class="input-group-text bg-primary text-white">sq ft</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <!-- Pets -->
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label for="Pet">Do you have pet ?<span class="text-danger"> *</span></label>
-                                                        <div class="form-group row">
-                                                            <div class="col-sm-5">
-                                                                <div class="form-check">
-                                                                    <label class="form-check-label">
-                                                                        <input type="radio" class="form-check-input" name="Pet" id="PetNo" value="No"> No
-                                                                    </label>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-sm-4">
-                                                                <div class="form-check">
-                                                                    <label class="form-check-label">
-                                                                        <input type="radio" class="form-check-input" name="Pet" id="PetYes" value="Yes">Yes
-                                                                    </label>
-                                                                </div>
+                                                                <span class="input-group-text bg-primary text-white">hours</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -236,6 +191,13 @@ session_start();
                                                         <textarea class="form-control" name="AdditionalReq" id="AdditionalReq" placeholder="We will consider your additional request" rows="4"></textarea>
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            <div class="row row-center">
+                                                <p class="card-description">
+                                                    <strong>Base Price: RM <span id="base-price">0.00</span></strong></br>
+                                                    <strong>Base duration: <span id="base-duration">0</span> hour</strong>
+                                                </p>
                                             </div>
 
                                             <input type="hidden" name="total" id="total" value="0">
@@ -264,7 +226,7 @@ session_start();
                                                                 value="<?php echo $service['service_id']; ?>"
                                                                 data-duration="<?php echo $service['duration_hour']; ?>"
                                                                 data-price="<?php echo $service['price_RM']; ?>">
-                                                            <?php echo $service['name']; ?> - RM <?php echo $service['price_RM']; ?>
+                                                            <?php echo $service['name']; ?> - RM <?php echo $service['price_RM']; ?> - <?php echo $service['duration_hour']; ?> hour
                                                         </label>
                                                     </div>
                                                     <div class="service-description small p-2" id="desc_<?php echo $service['service_id']; ?>" style="display: none; margin-left: 29px; outline: 1px solid #f8f9fa; border-radius: 2px;">
@@ -276,7 +238,8 @@ session_start();
                                             </div>
                                             <br>
                                             <p class="card-description">
-                                                <strong>Total for Additional Services: RM <span id="additional-services-total">0.00</span></strong>
+                                                <strong>Total for Additional Services: RM <span id="additional-services-total">0.00</span></strong></br>
+                                                <strong>Total estimated duration for Additional Services: <span id="additional-services-duration">0</span> hour</strong>
                                             </p>
                                         </div>
                                     </div>
@@ -290,7 +253,7 @@ session_start();
                                                 <div class="form-group">
                                                     <label for="NoOfCleaners">Number Of Cleaners<span class="text-danger"> *</span></label>
                                                     <select type="text" class="form-control" name="NoOfCleaners" id="NoOfCleaners" required>
-                                                        <option value="" disabled selected>Select number of cleaners</option>
+                                                        <option value="" disabled selected>Select date and time first</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -332,14 +295,14 @@ session_start();
                         <div class="row ">
                             <!-- Modal for Total Calculation -->
                             <div class="modal fade" id="totalCalculationModal" tabindex="-1" role="dialog" aria-labelledby="totalCalculationModalLabel" aria-hidden="true">
-                                <div class="modal-dialog" role="document">
+                                <div class="modal-dialog modal-md" role="document">
                                     <div class="modal-content">
                                         <div class="modal-header">
                                             <h4 class="modal-title" id="totalCalculationModalLabel">Booking Details</h4>
                                         </div>
                                         <div class="modal-body">
                                             <p id="bookingDetails"></p>
-                                            <p id="costDetails"></p>
+                                            <p id="costDetails"></p><hr>
                                             <ul>
                                                 <li class="text-muted"><small class="form-text text-muted">Pay via Cash on Delivery (COD)</small></li>
                                                 <li class="text-muted"><small class="form-text text-muted">Cancellation of booking can be made at least 24 hours before the scheduled date and time.</small></li>
@@ -376,153 +339,126 @@ session_start();
     <!-- Function Javascripts -->
     <script>
         // Available time slots (9 AM to 2 PM)
-        const AVAILABLE_TIME_SLOTS = [
-            "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"
-        ];
+        const AVAILABLE_TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00"];
 
-        // Pricing configuration
-        const PRICING = {
-            areaRate: 0.15, // RM per sq ft
-            bedroomRate: 10, // RM per bedroom
-            bathroomRate: 8, // RM per bathroom
-            livingroomRate: 6, // RM per living room
-            kitchenRate: 0.12, // RM per sq ft (kitchen)
-            petFee: 15, // RM if pet exists
-            // cleanerHourlyRate: 70 // RM per hour per cleaner
-        };
-
-        // Duration configuration (in hours)
-        const DURATION = {
-            areaRate: 0.002, // hours per sq ft
-            bedroomRate: 0.5, // hours per bedroom
-            bathroomRate: 0.3, // hours per bathroom
-            livingroomRate: 0.25, // hours per living room
-            kitchenRate: 0.002, // hours per sq ft (kitchen)
+        // Configuration
+        const CONFIG = {
+            serviceTaxRate: 0.06,
             maxDuration: 8
         };
 
-        // Service tax rate (6%)
-        const SERVICE_TAX_RATE = 0.06;
+        // House types from PHP
+        const houseTypes = <?php echo json_encode($houseTypes); ?>;
 
         // Resets all form fields and calculations
         function resetForms() {
-            // Reset main booking form
             document.getElementById('bookingForm').reset();
-
-            // Reset additional services
             document.querySelectorAll('.service-checkbox').forEach(checkbox => {
                 checkbox.checked = false;
-                const serviceId = checkbox.name.match(/\[(\d+)\]/)[1];
+                const desc = document.getElementById(`desc_${checkbox.id.split('_')[1]}`);
+                if (desc) desc.style.display = 'none';
             });
-
-            // Reset displays
-            document.getElementById('additional-services-total').textContent = '0.00';
-            document.getElementById('bookingDetails').innerHTML = '';
-            document.getElementById('costDetails').innerHTML = '';
+            updateAdditionalServices();
+            updateBasePrice();
         }
 
-        // Validates radio button selections (Pet)
-        function validateRadioButtons() {
-            const petSelected = document.querySelector('input[name="Pet"]:checked');
-
-            if (!petSelected) {
-                alert("Please select options for Pet");
-                return false;
-            }
-            return true;
-        }
-
-        // Calculates the base price based on property details
-        function calculateBasePrice() {
-            const totalArea = parseFloat(document.getElementById('TotalArea').value) || 0;
-            const noOfBedrooms = parseInt(document.getElementById('NoOfBedrooms').value) || 0;
-            const noOfBathrooms = parseInt(document.getElementById('NoOfBathrooms').value) || 0;
-            const noOfLivingrooms = parseInt(document.getElementById('NoOfLivingrooms').value) || 0;
-            const sizeOfKitchen = parseFloat(document.getElementById('SizeOfKitchen').value) || 0;
-            const hasPet = document.getElementById('PetYes').checked;
-
-            return (PRICING.areaRate * totalArea) +
-                (PRICING.bedroomRate * noOfBedrooms) +
-                (PRICING.bathroomRate * noOfBathrooms) +
-                (PRICING.livingroomRate * noOfLivingrooms) +
-                (PRICING.kitchenRate * sizeOfKitchen) +
-                (hasPet ? PRICING.petFee : 0);
-        }
-
-        // Calculates the base duration based on property details
-        function calculateBaseDuration() {
-            const totalArea = parseFloat(document.getElementById('TotalArea').value) || 0;
-            const noOfBedrooms = parseInt(document.getElementById('NoOfBedrooms').value) || 0;
-            const noOfBathrooms = parseInt(document.getElementById('NoOfBathrooms').value) || 0;
-            const noOfLivingrooms = parseInt(document.getElementById('NoOfLivingrooms').value) || 0;
-            const sizeOfKitchen = parseFloat(document.getElementById('SizeOfKitchen').value) || 0;
-            const hasPet = document.getElementById('PetYes').checked;
-
-            return (DURATION.areaRate * totalArea) +
-                (DURATION.bedroomRate * noOfBedrooms) +
-                (DURATION.bathroomRate * noOfBathrooms) +
-                (DURATION.livingroomRate * noOfLivingrooms) +
-                (DURATION.kitchenRate * sizeOfKitchen);
-        }
-
-        // Calculates the adjusted duration based on number of cleaners
-        function calculateAdjustedDuration(baseDuration) {
-            const noOfCleaners = parseInt(document.getElementById('NoOfCleaners').value) || 1;
-            const adjustedDuration = baseDuration / noOfCleaners;
-            return Math.max(1.0, adjustedDuration); // Minimum 1 hour
-        }
-
-        // Check if booking duration exceed the limit
-        function validateBookingDuration(duration) {
-            if (duration > DURATION.maxDuration) {
-                alert(`Booking duration cannot exceed ${DURATION.maxDuration} hours. Please reduce the scope of work.`);
-                return false;
-            }
-            return true;
-        }
-
-        // Calculates service tax
-        function calculateServiceTax(subtotal) {
-            return subtotal * SERVICE_TAX_RATE;
-        }
-
-        // Calculates total for additional services
+        // Calculate additional services
         function calculateAdditionalServices() {
             let total = 0;
             let duration = 0;
+            let services = [];
 
-            // Get all checked service checkboxes
             document.querySelectorAll('.service-checkbox:checked').forEach(checkbox => {
                 const price = parseFloat(checkbox.dataset.price);
                 const serviceDuration = parseFloat(checkbox.dataset.duration);
+                const serviceName = checkbox.parentElement.textContent.trim();
 
                 total += price;
                 duration += serviceDuration;
+
+                // Push service details into the services array
+                services.push({
+                    name: serviceName,
+                    price: price,
+                    duration: serviceDuration
+                });
             });
 
-            // Update the display
             document.getElementById('additional-services-total').textContent = total.toFixed(2);
+            document.getElementById('additional-services-duration').textContent = duration.toFixed(1);
 
             return {
                 total,
-                duration
+                duration,
+                services
             };
         }
 
-        // Update the total when they're checked
-        document.querySelectorAll('.service-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                updateTotalPrice();
-            });
-        });
+        // Calculate base price based on house type and hours
+        function updateBasePrice() {
+            const houseId = document.getElementById('HouseType').value;
+            const hours = parseFloat(document.getElementById('HoursBooked').value) || 0;
+            const houseType = houseTypes[houseId];
 
-        // Updates the total price display when quantities change
-        function updateTotalPrice() {
-            calculateAdditionalServices();
+            if (houseType) {
+                const basePrice = houseType.base_hourly_rate * hours;
+                document.getElementById('base-price').textContent = basePrice.toFixed(2);
+                document.getElementById('base-duration').textContent = hours.toFixed(1);
+            }
         }
 
-        // Checks cleaner availability for a date/time
-        async function checkAvailability(date, time, city, estimatedDuration = 1.0) {
+        // Calculate total duration (hours booked + additional services)
+        function calculateTotalDuration() {
+            const hoursBooked = parseFloat(document.getElementById('HoursBooked').value) || 0;
+            const additionalDuration = calculateAdditionalServices().duration;
+            return hoursBooked + additionalDuration;
+        }
+
+        // Update cleaner options based on availability
+        async function updateCleanerOptions() {
+            const date = document.getElementById('Date').value;
+            const time = document.getElementById('Time').value;
+            const city = document.getElementById('City').value;
+            const select = document.getElementById('NoOfCleaners');
+
+            // Clear existing options
+            select.disabled = true;
+
+            if (!date || !time) {
+                select.innerHTML = '<option value="" disabled selected>Select date and time first</option>';
+                return;
+            } else {
+                select.innerHTML = '<option value="" disabled selected>Checking availability...</option>';
+            }
+
+            try {
+                const totalDuration = calculateTotalDuration();
+                const response = await checkAvailability(date, time, city, totalDuration);
+                const availableCleaners = response.available;
+                select.innerHTML = '<option value="" disabled selected>Select cleaners</option>';
+
+                // Case 1: No cleaners available
+                if (availableCleaners <= 0) {
+                    select.innerHTML = '<option value="" disabled selected>No cleaners available</option>';
+                    return;
+                }
+
+                // Case 2: Cleaners available - just show options 1 through available cleaners
+                select.disabled = false;
+                for (let i = 1; i <= availableCleaners; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    select.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Error checking availability:', error);
+                select.innerHTML = '<option value="" disabled selected>Error checking availability</option>'
+            }
+        }
+
+        // Check cleaner availability
+        async function checkAvailability(date, time, city, estimatedDuration) {
             const response = await fetch('dbconnection/checkavailability.php', {
                 method: 'POST',
                 headers: {
@@ -538,191 +474,225 @@ session_start();
             return response.json();
         }
 
-        // Handles date selection changes
+        // Handle date selection
         async function handleDateChange() {
-            const selectedDate = document.getElementById('Date').value;
-            const city = document.getElementById('City').value;
+            const dateInput = document.getElementById('Date');
             const timeSelect = document.getElementById('Time');
-            const noOfCleanersSelect = document.getElementById('NoOfCleaners');
-
-            timeSelect.innerHTML = '';
+            timeSelect.innerHTML = '<option value="" disabled selected>Select time</option>';
             timeSelect.disabled = true;
 
-            if (!selectedDate) {
-                timeSelect.innerHTML = '<option value="">Select a date first</option>';
-                return;
-            }
+            if (!dateInput.value) return;
 
-            // Get today's date
+            // Date validation
             const today = new Date();
-            const selected = new Date(selectedDate);
+            today.setHours(0, 0, 0, 0); // Reset time part to midnight for accurate comparison
 
-            // Check if the selected date is today or in the past
-            if (selected < today) {
-                alert("The selected date cannot be in the past.");
-                return;
-            }
-            
-            // Check if the selected date is today
-            if (selected.toDateString() === today.toDateString()) {
-                alert("The selected date cannot be today. Please choose a future date.");
-                return;
-            }
+            const selectedDate = new Date(dateInput.value);
+            selectedDate.setHours(0, 0, 0, 0); // Reset time part to midnight
 
-            // Check if weekend
-            const dayOfWeek = new Date(selectedDate).getDay();
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
-                alert("Booking not available on weekends.");
-                return;
-            }
-
-            // Check availability
-            const availableCleaners = await checkAvailability(selectedDate, '', city);
-            if (availableCleaners.length === 0) {
-                alert("No available slots on this date.");
+            // Reset time selection if invalid date
+            if (selectedDate <= today) {
+                alert("Bookings must be made at least 1 day in advance and in the future.");
+                dateInput.value = '';
                 return;
             }
 
             // Populate time slots
             AVAILABLE_TIME_SLOTS.forEach(time => {
-                const option = document.createElement("option");
-                option.value = time;
-                option.textContent = time;
-                timeSelect.appendChild(option);
+                timeSelect.appendChild(new Option(time, time));
             });
-
             timeSelect.disabled = false;
         }
 
-        //Handles time selection changes
-        async function handleTimeChange() {
-            const date = document.getElementById('Date').value;
-            const time = document.getElementById('Time').value;
-            const city = document.getElementById('City').value;
-            const baseDuration = calculateBaseDuration();
-            const adjustedDuration = calculateAdjustedDuration(baseDuration);
+        function validateTotalDuration() {
+            const hoursBooked = parseFloat(document.getElementById('HoursBooked').value) || 0;
+            const additionalServices = calculateAdditionalServices();
+            const totalDuration = hoursBooked + additionalServices.duration;
 
-            const response = await fetch('dbconnection/checkavailability.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    date,
-                    time,
-                    city,
-                    estimatedDuration: adjustedDuration
-                })
-            });
-
-            const data = await response.json();
-            const cleanersSelect = document.getElementById('NoOfCleaners');
-
-            // Clear previous options
-            cleanersSelect.innerHTML = '<option value="" disabled selected>Select number of cleaners</option>';
-
-            // Add available options (1 to available count, max 4)
-            const maxCleaners = Math.min(data.available, 4);
-            for (let i = 1; i <= maxCleaners; i++) {
-                const option = document.createElement("option");
-                option.value = i;
-                option.textContent = i;
-                cleanersSelect.appendChild(option);
+            if (totalDuration > CONFIG.maxDuration) {
+                alert(`Total duration cannot exceed ${CONFIG.maxDuration} hours (currently ${totalDuration} hours). Please reduce either base hours or additional services or add more cleaner.`);
+                document.getElementById('HoursBooked').value = Math.min(CONFIG.maxDuration - additionalServices.duration, CONFIG.maxDuration);
+                updateBasePrice();
             }
         }
 
-        // Calculates and displays the total booking cost
+        // Calculate and display total
         function calculateAndDisplayTotal() {
+            // Validate form first
             const form = document.getElementById('bookingForm');
             if (!form.checkValidity()) {
-                alert("Please fill in all required fields.");
+                form.reportValidity();
                 return;
             }
 
-            // Calculate all components
+            // Get booking details
+            const houseId = document.getElementById('HouseType').value;
+            const houseType = houseTypes[houseId];
+            const hoursBooked = parseFloat(document.getElementById('HoursBooked').value) || 0;
+            const cleaners = parseInt(document.getElementById('NoOfCleaners').value) || 1;
+
+            // Calculate prices
+            const baseHourlyRate = houseType.base_hourly_rate;
+            const baseAmount = baseHourlyRate * hoursBooked
+            const basePrice = baseAmount * cleaners;
             const additionalServices = calculateAdditionalServices();
-            const basePrice = calculateBasePrice();
-            const baseDuration = calculateBaseDuration() + additionalServices.duration;
-            const adjustedDuration = calculateAdjustedDuration(baseDuration);
+            const subtotal = basePrice + additionalServices.total;
+            const tax = subtotal * CONFIG.serviceTaxRate;
+            const total = subtotal + tax;
 
-            // Validate duration
-            if (!validateBookingDuration(adjustedDuration)) {
+            // Calculate duration
+            const totalDuration = (hoursBooked + additionalServices.duration) / cleaners;
+
+            if (totalDuration > CONFIG.maxDuration) {
+                alert(`Error: Total booking duration cannot exceed ${CONFIG.maxDuration} hours. Current duration: ${totalDuration.toFixed(1)} hours.`);
                 return;
             }
 
-            const serviceTax = calculateServiceTax(basePrice + additionalServices.total);
-            const finalTotal = basePrice + additionalServices.total + serviceTax;
+            // Update hidden form fields
+            document.getElementById('total').value = total.toFixed(2);
+            document.getElementById('duration').value = totalDuration.toFixed(2);
 
-            // Update hidden fields
-            document.getElementById('total').value = finalTotal.toFixed(2);
-            document.getElementById('duration').value = adjustedDuration.toFixed(2);
-
-            const formattedDate = new Date(document.getElementById('Date').value).toLocaleDateString('en-US', {
+            // Format date for display
+            const bookingDate = new Date(document.getElementById('Date').value);
+            const formattedDate = bookingDate.toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
-                month: 'short',
+                month: 'long',
                 day: 'numeric'
             });
 
-            // Display in modal
+            // Show detailed invoice in modal
             document.getElementById('bookingDetails').innerHTML = `
-                <strong>Date: ${formattedDate}</strong><br>
-                <strong>Time: ${document.getElementById('Time').value}</strong><br><br>
-                Cleaners: ${document.getElementById('NoOfCleaners').value}<hr>
-            `;
+                <strong>Booking Date:</strong> ${formattedDate}<br>
+                <strong>Time:</strong> ${document.getElementById('Time').value}<br>
+                <strong>Address:</strong> ${document.getElementById('Address').value}<hr>`;
+
+            // Generate the invoice table
+            let additionalServicesDetails = '';
+            if (additionalServices.total > 0) {
+                additionalServicesDetails = additionalServices.services.map(service => `
+                <tr>
+                    <td>${service.name}</td>
+                    <td class="text-center">${service.duration.toFixed(1)} hours</td>
+                    <td class="text-center">RM ${service.price.toFixed(2)}</td>
+                    <td class="text-right">RM ${service.price.toFixed(2)}</td>
+                </tr>
+                `).join('');
+            }
 
             document.getElementById('costDetails').innerHTML = `
-                Base Price: RM ${basePrice.toFixed(2)}<br>
-                Additional Services: RM ${additionalServices.total.toFixed(2)}<br>
-                Service Tax (6%): RM ${serviceTax.toFixed(2)}<br><hr>
-                <strong>Final Total: RM ${finalTotal.toFixed(2)}</strong><br>
-                <strong>Estimated Duration: ${adjustedDuration.toFixed(2)} hours</strong>
-            `;
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-center">Hours/Quantity</th>
+                            <th class="text-center">Unit Price (RM)</th>
+                            <th class="text-right">Amount (RM)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="4" class="text-center font-weight-bold">Base</td>
+                        </tr>
+                        <tr>
+                            <td>Base Service - ${houseType.name}</td>
+                            <td class="text-center">${hoursBooked.toFixed(1)} hours</td>
+                            <td class="text-center">RM ${baseHourlyRate}</td>
+                            <td class="text-right">RM ${baseAmount.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Number of Cleaners</td>
+                            <td class="text-center">${cleaners} cleaner(s)</td>
+                            <td class="text-center">-</td>
+                            <td class="text-right">-</td>
+                        </tr>
+                        <tr class="font-weight-bold">
+                            <td colspan="3" class="font-weight-bold text-right">Subtotal (Base Service x Number of Cleaners)</td>
+                            <td class="text-right font-weight-bold">RM ${basePrice.toFixed(2)}</td>
+                        </tr>
+                        ${additionalServicesDetails.length > 0 ? `
+                        <tr>
+                            <td colspan="4" class="text-center font-weight-bold">Additional Services</td>
+                        </tr>
+                        ${additionalServicesDetails}
+                        <tr>
+                            <td colspan="3" class="font-weight-bold text-right">Subtotal + Additional Service(s)</td>
+                            <td class="text-right font-weight-bold">RM ${subtotal.toFixed(2)}</td>
+                        </tr>
+                        ` : ''}
+                    </tbody>
+                </table><br><br>
 
+                <table class="table table-bordered">
+                    </tbody>
+                        <tr>
+                            <td colspan="4" class="text-center font-weight-bold">Summary</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="font-weight-bold text-right">Service Tax (6%)</td>
+                            <td class="text-right">RM ${tax.toFixed(2)}</td>
+                        </tr>
+                        <tr class="font-weight-bold">
+                            <td colspan="3" class="font-weight-bold text-right">Total Amount</td>
+                            <td class="text-right font-weight-bold">RM ${total.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="font-weight-bold text-right">Estimated Total Duration</td>
+                            <td class="text-right font-weight-bold">${totalDuration.toFixed(1)} hours</td>
+                        </tr>
+                    </tbody>
+                </table>`;
+
+            // Show modal
             $('#totalCalculationModal').modal('show');
         }
 
-        // Show/hide service description when checkbox is checked/unchecked
-        document.querySelectorAll('.service-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const serviceId = this.id.split('_')[1];
-                const description = document.getElementById(`desc_${serviceId}`);
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial hours based on house type
+            const houseId = document.getElementById('HouseType').value;
+            if (houseId && houseTypes[houseId]) {
+                const minHours = houseTypes[houseId].min_hours;
+                document.getElementById('HoursBooked').min = minHours;
+                document.getElementById('HoursBooked').value = minHours;
+                updateBasePrice();
+            }
 
-                if (this.checked) {
-                    description.style.display = 'block';
-                } else {
-                    description.style.display = 'none';
+            // Event listeners
+            document.getElementById('HoursBooked').addEventListener('input', function() {
+                updateBasePrice();
+                updateCleanerOptions();
+                validateTotalDuration();
+            });
+
+            document.getElementById('Date').addEventListener('change', handleDateChange);
+            document.getElementById('Time').addEventListener('change', updateCleanerOptions);
+
+            // Service checkbox changes
+            document.querySelectorAll('.service-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const serviceId = this.id.split('_')[1];
+                    const desc = document.getElementById(`desc_${serviceId}`);
+                    if (desc) desc.style.display = this.checked ? 'block' : 'none';
+
+                    calculateAdditionalServices();
+                    updateCleanerOptions();
+                    validateTotalDuration();
+                });
+            });
+
+            // Calculate total button
+            document.getElementById('calculateTotalBtn').addEventListener('click', calculateAndDisplayTotal);
+
+            // Proceed with booking button
+            document.getElementById('proceedBookingBtn').addEventListener('click', function() {
+                if (confirm("Are you sure you want to confirm this booking?")) {
+                    document.getElementById('bookingForm').submit();
                 }
-
-                updateTotalPrice();
             });
         });
-
-        // Form submission handler
-        document.getElementById('bookingForm').addEventListener('submit', function(event) {
-            if (!this.checkValidity() || !validateRadioButtons() || !validateAdditionalServices()) {
-                event.preventDefault();
-                event.stopPropagation();
-                alert("Please fill in all required fields.");
-            }
-            this.classList.add('was-validated');
-        });
-
-        // Date and time selection handlers
-        document.getElementById('Date').addEventListener('input', handleDateChange);
-        document.getElementById('Time').addEventListener('change', handleTimeChange);
-
-        // Button handlers
-        document.getElementById('calculateTotalBtn').addEventListener('click', calculateAndDisplayTotal);
-        document.getElementById('proceedBookingBtn').addEventListener('click', function() {
-            if (confirm("Are you sure you want to proceed with this booking?")) {
-                document.getElementById('bookingForm').submit();
-            } else {
-                // Keep the modal open if user cancels
-                $('#totalCalculationModal').modal('show');
-            }
-        });
     </script>
+
 
     <!-- javascript files -->
     <script src="../vendors/js/vendor.bundle.base.js"></script>

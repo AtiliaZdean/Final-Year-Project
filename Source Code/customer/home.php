@@ -35,6 +35,13 @@ session_start();
                         </a>
                     </li>
 
+                    <!-- Community -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="community.php">
+                            <span class="menu-title">Community</span>
+                        </a>
+                    </li>
+
                     <!-- Booking -->
                     <li class="nav-item">
                         <a class="nav-link" href="addbooking.php">
@@ -68,6 +75,10 @@ session_start();
                                 <img src="..\images\profile picture.jpg" alt="profile" />
                             </a>
                             <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+                                <a class="dropdown-item" href="profile.php">
+                                    <i class="ti-user text-primary"></i>
+                                    Profile
+                                </a>
                                 <a class="dropdown-item" href="logout.php">
                                     <i class="ti-power-off text-primary"></i>
                                     Logout
@@ -96,10 +107,10 @@ session_start();
                         <div class="col-md-4 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
-                                    <h4 class="card-title">Top aligned media</h4>
+                                    <h4 class="card-title">Trusted Professionals</h4>
                                     <div class="media">
                                         <div class="media-body">
-                                            <p class="card-text">Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque.</p>
+                                            <p class="card-text">All our cleaners are thoroughly vetted, background-checked, and trained in the latest cleaning techniques for your peace of mind.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -108,11 +119,10 @@ session_start();
                         <div class="col-md-4 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
-                                    <h4 class="card-title">Center aligned media</h4>
+                                    <h4 class="card-title">Deep Clean Guarantee</h4>
                                     <div class="media">
-                                        <i class="ti-world icon-md text-info d-flex align-self-center mr-3"></i>
                                         <div class="media-body">
-                                            <p class="card-text">Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque.</p>
+                                            <p class="card-text">We don’t just tidy—we sanitize. Using hospital-grade techniques to eliminate germs in high-touch areas.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -121,11 +131,10 @@ session_start();
                         <div class="col-md-4 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
-                                    <h4 class="card-title">Bottom aligned media</h4>
+                                    <h4 class="card-title">Your Schedule, Your Rules</h4>
                                     <div class="media">
-                                        <i class="ti-world icon-md text-info d-flex align-self-end mr-3"></i>
                                         <div class="media-body">
-                                            <p class="card-text">Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque.</p>
+                                            <p class="card-text">Book same-day or plan ahead. Easy cancellations and lock in your preferred time slot every visit.</p>
                                         </div>
                                     </div>
                                 </div>

@@ -2,26 +2,93 @@
 session_start();
 include('../dbconnection.php');
 
+$date = isset($_POST['Date']) ? $_POST['Date'] : '';
+$status = isset($_POST['Status']) ? $_POST['Status'] : '';
+$paymentStatus = isset($_POST['PaymentStatus']) ? $_POST['PaymentStatus'] : '';
+
 // Get customer's bookings
 $customer_id = $_SESSION['customer_id'];
 $stmt = "SELECT b.*, 
          GROUP_CONCAT(DISTINCT s.name SEPARATOR ', ') AS cleaners,
          GROUP_CONCAT(DISTINCT asv.name SEPARATOR ', ') AS services,
-         p.status AS payment_status
+         h.name AS house,
+         p.status AS payment_status,
+         f.rating AS feedback_rating,
+         f.comment AS feedback_comment
          FROM booking b
          LEFT JOIN BOOKING_CLEANER bc ON b.booking_id = bc.booking_id
          LEFT JOIN STAFF s ON bc.staff_id = s.staff_id
          LEFT JOIN BOOKING_SERVICE bs ON b.booking_id = bs.booking_id
          LEFT JOIN ADDITIONAL_SERVICE asv ON bs.service_id = asv.service_id
+         LEFT JOIN HOUSE_TYPE h ON h.house_id = b.house_id
          LEFT JOIN PAYMENT p ON p.booking_id = b.booking_id
-         WHERE b.customer_id = ?
-         GROUP BY b.booking_id 
-         ORDER BY b.scheduled_date DESC, b.scheduled_time DESC";
+         LEFT JOIN FEEDBACK f ON f.booking_id = b.booking_id
+         WHERE b.customer_id = ?";
+if (!empty($date)) {
+    $stmt .= " AND b.scheduled_date = '" . $conn->real_escape_string($date) . "'";
+}
+if (!empty($status)) {
+    $stmt .= " AND b.status = '" . $conn->real_escape_string($status) . "'";
+}
+if (!empty($paymentStatus)) {
+    $stmt .= " AND p.status = '" . $conn->real_escape_string($paymentStatus) . "'";
+}
+$stmt .= " GROUP BY b.booking_id ORDER BY b.scheduled_date DESC, b.scheduled_time DESC";
 $stmt = $conn->prepare($stmt);
 $stmt->bind_param("i", $customer_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $bookings = $result->fetch_all(MYSQLI_ASSOC);
+
+// Handle cancellation request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
+    $booking_id = $_POST['booking_id'];
+
+    // Verify the booking belongs to the logged-in customer
+    $verify_stmt = $conn->prepare("SELECT customer_id, scheduled_date, scheduled_time, status FROM booking WHERE booking_id = ?");
+    $verify_stmt->bind_param("i", $booking_id);
+    $verify_stmt->execute();
+    $verify_result = $verify_stmt->get_result();
+
+    if ($verify_result->num_rows > 0) {
+        $booking_data = $verify_result->fetch_assoc();
+
+        // Check if booking belongs to this customer
+        if ($booking_data['customer_id'] == $customer_id) {
+            // Check if booking is pending and at least 24 hours in advance
+            $booking_datetime = new DateTime($booking_data['scheduled_date'] . ' ' . $booking_data['scheduled_time']);
+            $current_datetime = new DateTime();
+            $time_diff = $current_datetime->diff($booking_datetime);
+
+            if ($booking_data['status'] == 'Pending' && $time_diff->h + ($time_diff->days * 24) >= 24) {
+                // Update booking status to Cancelled
+                $update_booking = $conn->prepare("UPDATE booking SET status = 'Cancelled', note = 'Cancelled by customer' WHERE booking_id = ?");
+                $update_booking->bind_param("i", $booking_id);
+                $update_booking->execute();
+
+                // Update payment status to Cancelled if exists
+                $update_payment = $conn->prepare("UPDATE payment SET status = 'Cancelled' WHERE booking_id = ?");
+                $update_payment->bind_param("i", $booking_id);
+                $update_payment->execute();
+
+                $_SESSION['status'] = "Booking has been cancelled successfully.";
+
+                // Refresh the page to show updated status
+                header("Location: viewbooking.php");
+                exit();
+            } else {
+                $_SESSION['EmailMessage'] = "Cancellation failed. Bookings can only be cancelled at least 24 hours before the scheduled time.";
+            }
+        } else {
+            $_SESSION['EmailMessage'] = "You don't have permission to cancel this booking.";
+        }
+    } else {
+        $_SESSION['EmailMessage'] = "Booking not found.";
+    }
+
+    header("Location: viewbooking.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -54,6 +121,13 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
                     <li class="nav-item">
                         <a class="nav-link" href="home.php">
                             <span class="menu-title">Home</span>
+                        </a>
+                    </li>
+
+                    <!-- Community -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="community.php">
+                            <span class="menu-title">Community</span>
                         </a>
                     </li>
 
@@ -90,6 +164,10 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
                                 <img src="..\images\profile picture.jpg" alt="profile" />
                             </a>
                             <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+                                <a class="dropdown-item" href="profile.php">
+                                    <i class="ti-user text-primary"></i>
+                                    Profile
+                                </a>
                                 <a class="dropdown-item" href="logout.php">
                                     <i class="ti-power-off text-primary"></i>
                                     Logout
@@ -115,11 +193,71 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
 
                     <div class="row row-center">
                         <div class="col-md-12 col-center grid-margin">
+                            <p>Cancellation can be made at least 24 hours before the service appointment. For any inquiry, please contact 012-3456789</p>
+                        </div>
+
+                        <!-- Filtering -->
+                        <div class="col-md-12 col-center grid-margin">
+                            <div class="card card-transparent">
+                                <div class="card-body">
+                                    <form class="form-inline" method="POST">
+                                        <label class="mr-3">Search by :</label>
+
+                                        <!-- Search date -->
+                                        <input type="date" class="form-control form-control-sm mr-3" name="Date" id="Date" title="Booking date">
+
+                                        <!-- By status -->
+                                        <select class="form-control form-control-sm mr-3" name="Status" id="Status">
+                                            <option value="" disabled selected>Status</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Completed">Completed</option>
+                                            <option value="Cancelled">Cancelled</option>
+                                        </select>
+
+                                        <!-- By payment status -->
+                                        <select class="form-control form-control-sm mr-4" name="PaymentStatus" id="PaymentStatus">
+                                            <option value="" disabled selected>Payment status</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Completed">Completed</option>
+                                        </select>
+
+                                        <button type="submit" class="btn btn-primary btn-sm mr-3">Search</button>
+                                        <button type="button" class="btn btn-light btn-sm" onclick="resetFilters()">Reset</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 col-center grid-margin">
                             <?php
                             if (count($bookings) > 0):
-                                echo "<p>" . count($bookings) . " booking(s) made.</p>";
+                                echo "<p>" . count($bookings) . " booking(s).</p>";
                             ?>
                         </div>
+                    </div>
+
+                    <div class="row row-center">
+                        <?php
+                                // Success message
+                                if (isset($_SESSION['status'])) {
+                        ?>
+                            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                                <?php echo $_SESSION['status']; ?>
+                            </div>
+                        <?php
+                                    unset($_SESSION['status']);
+                                }
+
+                                // Error message
+                                if (isset($_SESSION['EmailMessage'])) {
+                        ?>
+                            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                                <?php echo $_SESSION['EmailMessage']; ?>
+                            </div>
+                        <?php
+                                    unset($_SESSION['EmailMessage']);
+                                }
+                        ?>
                     </div>
 
                     <?php foreach ($bookings as $index => $booking): ?>
@@ -184,7 +322,7 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
                                                 <div class="form-group row">
                                                     <label class="col-sm-3 col-form-label">Scheduled Date</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control" value="<?= htmlspecialchars($booking['scheduled_date']); ?>" readonly>
+                                                        <input type="text" class="form-control" value="<?= htmlspecialchars(date('d-m-Y', strtotime($booking["scheduled_date"]))); ?>" readonly>
                                                     </div>
                                                 </div>
                                             </div>
@@ -194,7 +332,7 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
                                                 <div class="form-group row">
                                                     <label class="col-sm-3 col-form-label">Scheduled Time</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control" value="<?= htmlspecialchars($booking['scheduled_time']); ?>" readonly>
+                                                        <input type="text" class="form-control" value="<?= htmlspecialchars(date('H:i', strtotime($booking["scheduled_time"]))); ?>" readonly>
                                                     </div>
                                                 </div>
                                             </div>
@@ -202,72 +340,38 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
 
                                         <div class="card-content">
                                             <div class="row">
-                                                <!-- Total Area -->
+                                                <!-- Address -->
                                                 <div class="col-md-6">
                                                     <div class="form-group row">
-                                                        <label class="col-sm-3 col-form-label">Total Area</label>
+                                                        <label class="col-sm-3 col-form-label">Address</label>
                                                         <div class="col-sm-9">
-                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['total_area_sqft']) ?> sqft" readonly>
+                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['address']) ?>" readonly>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <!-- No Of Bedrooms -->
+                                                <!-- House Type -->
                                                 <div class="col-md-6">
                                                     <div class="form-group row">
-                                                        <label class="col-sm-3 col-form-label">No Of Bedrooms</label>
+                                                        <label class="col-sm-3 col-form-label">House Type</label>
                                                         <div class="col-sm-9">
-                                                            <input type="number" class="form-control" value="<?= htmlspecialchars($booking['no_of_bedrooms']) ?>" readonly>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="row">
-                                                <!-- No Of Bathrooms -->
-                                                <div class="col-md-6">
-                                                    <div class="form-group row">
-                                                        <label class="col-sm-3 col-form-label">No Of Bathrooms</label>
-                                                        <div class="col-sm-9">
-                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['no_of_bathrooms']) ?>" readonly>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- No Of Livingrooms -->
-                                                <div class="col-md-6">
-                                                    <div class="form-group row">
-                                                        <label class="col-sm-3 col-form-label">No Of Livingrooms</label>
-                                                        <div class="col-sm-9">
-                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['no_of_livingroooms']) ?>" readonly>
+                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['house']) ?>" readonly>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div class="row">
-                                                <!-- Size Of Kitchen -->
+                                                <!-- Hours Booked -->
                                                 <div class="col-md-6">
                                                     <div class="form-group row">
-                                                        <label class="col-sm-3 col-form-label">Size Of Kitchen</label>
+                                                        <label class="col-sm-3 col-form-label">Number of Hours</label>
                                                         <div class="col-sm-9">
-                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['size_of_kitchen_sqft']) ?> sqft" readonly>
+                                                            <input type="number" class="form-control" value="<?= htmlspecialchars($booking['hours_booked']) ?>" readonly>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <!-- Pet -->
-                                                <div class="col-md-6">
-                                                    <div class="form-group row">
-                                                        <label class="col-sm-3 col-form-label">Pets</label>
-                                                        <div class="col-sm-9">
-                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['pet']) ?>" readonly>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="row">
                                                 <!-- Custom Request -->
                                                 <div class="col-md-6">
                                                     <div class="form-group row">
@@ -277,13 +381,26 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
 
+                                            <div class="row">
                                                 <!-- Services -->
                                                 <div class="col-md-6">
                                                     <div class="form-group row">
                                                         <label class="col-sm-3 col-form-label">Services</label>
                                                         <div class="col-sm-9">
                                                             <input type="text" class="form-control" value="<?= htmlspecialchars($booking['services'] ?? '') ?>" readonly>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Cleaners -->
+                                                <div class="col-md-6">
+                                                    <div class="form-group row">
+                                                        <label class="col-sm-3 col-form-label">Cleaners</label>
+                                                        <div class="input-group col-sm-9">
+                                                            <input type="text" class="form-control col-sm-2" value="<?= htmlspecialchars($booking['no_of_cleaners']) ?>" readonly>
+                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['cleaners'] ?? '') ?>" readonly>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -312,38 +429,155 @@ $bookings = $result->fetch_all(MYSQLI_ASSOC);
                                             </div>
 
                                             <div class="row">
-                                                <!-- Cleaners -->
-                                                <div class="col-md-6">
-                                                    <div class="form-group row">
-                                                        <label class="col-sm-3 col-form-label">Cleaners</label>
-                                                        <div class="input-group col-sm-9">
-                                                            <input type="text" class="form-control col-sm-2" value="<?= htmlspecialchars($booking['no_of_cleaners']) ?>" readonly>
-                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['cleaners'] ?? '') ?>" readonly>
+                                                <?php if (htmlspecialchars($booking['status']) == 'Pending') { ?>
+                                                    <!-- Cancellation -->
+                                                    <div class="col-md-6">
+                                                        <div class="form-group row">
+                                                            <label class="col-sm-3 col-form-label">Cancellation</label>
+                                                            <div class="col-sm-9">
+                                                                <?php
+                                                                $booking_datetime = new DateTime($booking['scheduled_date'] . ' ' . $booking['scheduled_time']);
+                                                                $current_datetime = new DateTime();
+                                                                $time_diff = $current_datetime->diff($booking_datetime);
+
+                                                                if ($booking['status'] == 'Pending' && $time_diff->h + ($time_diff->days * 24) >= 24): ?>
+                                                                    <form method="POST" action="viewbooking.php" onsubmit="return confirm('Are you sure you want to cancel this booking?')">
+                                                                        <input type="hidden" name="booking_id" value="<?= $booking['booking_id'] ?>">
+                                                                        <button type="submit" name="cancel_booking" class="btn btn-danger">Cancel Booking</button>
+                                                                    </form>
+                                                                <?php elseif ($booking['status'] == 'Pending'): ?>
+                                                                    <button class="btn btn-secondary" disabled title="Cancellation must be made at least 24 hours before appointment">Cancellation Closed</button>
+                                                                <?php else: ?>
+                                                                    <button class="btn btn-secondary" disabled>Not Applicable</button>
+                                                                <?php endif; ?>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                <?php } ?>
                                             </div>
+
+                                            <?php if (htmlspecialchars($booking['status']) == 'Completed') { ?>
+                                                <div class="row row-center">
+                                                    <h5>Feedback</h5>
+                                                </div>
+
+                                                <form class="pt-3" id="feedbackForm-<?= $booking['booking_id'] ?>" method="POST" action="dbconnection/dbfeedback.php">
+                                                    <input type="hidden" name="booking_id" value="<?= $booking['booking_id'] ?>">
+                                                    <input type="hidden" name="Rating" id="ratingValue-<?= $booking['booking_id'] ?>" value="<?= htmlspecialchars($booking['feedback_rating']) ?>">
+
+                                                    <div class="row">
+                                                        <!-- Rating -->
+                                                        <div class="col-md-6">
+                                                            <div class="form-group row">
+                                                                <label class="col-sm-3 col-form-label pr-1" for="Rating">Rating</label>
+                                                                <div class="col-sm-9">
+                                                                    <div class="star-rating-container">
+                                                                        <div class="form-control star-rating <?= isset($booking['feedback_rating']) ? 'rating-locked' : '' ?>" style="border: none;">
+                                                                            <?php
+                                                                            $currentRating = isset($booking['feedback_rating']) ? (int)$booking['feedback_rating'] : 0;
+                                                                            $isReadonly = isset($booking['feedback_rating']);
+                                                                            for ($i = 5; $i >= 1; $i--): ?>
+                                                                                <input type="radio" id="star<?= $i ?>-<?= $booking['booking_id'] ?>"
+                                                                                    name="rating-<?= $booking['booking_id'] ?>"
+                                                                                    value="<?= $i ?>"
+                                                                                    <?= $currentRating == $i ? 'checked' : '' ?>
+                                                                                    <?= $isReadonly ? 'disabled' : '' ?>>
+                                                                                <label for="star<?= $i ?>-<?= $booking['booking_id'] ?>"
+                                                                                    title="<?= $i ?> star<?= $i != 1 ? 's' : '' ?>"
+                                                                                    <?= $isReadonly ? 'style="cursor: default;"' : '' ?>>
+                                                                                    <i class="ti-star"></i>
+                                                                                </label>
+                                                                            <?php endfor; ?>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Comment -->
+                                                        <div class="col-md-6">
+                                                            <div class="form-group row">
+                                                                <label class="col-sm-3 col-form-label pr-1" for="Comment">Comment</label>
+                                                                <div class="col-sm-9">
+                                                                    <textarea class="form-control" name="Comment" rows="3" <?= $isReadonly ? 'readonly' : '' ?>><?= htmlspecialchars($booking['feedback_comment']) ?></textarea>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row row-center">
+                                                        <button type="submit" class="btn btn-primary" <?= $isReadonly ? 'disabled' : '' ?>
+                                                            onclick="<?= !$isReadonly ? 'return confirm(\'Are you sure you want to submit this feedback?\')' : 'return false' ?>">
+                                                            <?= $isReadonly ? 'Feedback Submitted' : 'Submit Feedback' ?>
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            <?php } ?>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                     <?php endforeach; ?>
                 <?php else: ?>
-                            <p>No booking made. Let's <a href="addbooking.php" class="text-primary">book now !</a></p>
-                        </div>
-                    </div>
-                <?php endif; ?>
+                    <p>No booking. Let's <a href="addbooking.php" class="text-primary">book now !</a></p>
                 </div>
-                <footer class="footer"></footer>
             </div>
+        <?php endif; ?>
         </div>
+        <footer class="footer"></footer>
+    </div>
+    </div>
     </div>
 
     <!-- Function Javascripts -->
     <script>
+        // Star rating functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle all star rating interactions
+            document.querySelectorAll('.star-rating:not(.rating-locked)').forEach(ratingContainer => {
+                const form = ratingContainer.closest('form');
+                const hiddenInput = form.querySelector('input[type="hidden"][name="Rating"]');
+                const stars = ratingContainer.querySelectorAll('input[type="radio"]');
+
+                stars.forEach(star => {
+                    star.addEventListener('change', function() {
+                        hiddenInput.value = this.value;
+                    });
+
+                    star.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                });
+
+                ratingContainer.querySelectorAll('label').forEach(label => {
+                    label.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                });
+
+                // Initialize with default value if exists
+                if (hiddenInput.value) {
+                    const checkedStar = ratingContainer.querySelector(`input[value="${hiddenInput.value}"]`);
+                    if (checkedStar) checkedStar.checked = true;
+                }
+            });
+        });
+
+        // Reset all filter dropdowns to their default state
+        function resetFilters() {
+            document.getElementById('Date').value = '';
+            document.getElementById('Status').selectedIndex = 0;
+            document.getElementById('PaymentStatus').selectedIndex = 0;
+            document.forms[0].submit();
+        }
+
         function toggleCollapse(element) {
+            // Check if the click target is inside the form or star rating
+            if (event.target.closest('form') || event.target.closest('.star-rating')) {
+                return; // Don't collapse if clicking inside form or star rating
+            }
+
             // Find the card content and arrow icon
             const card = element.closest('.card-collapsible');
             const content = card.querySelector('.card-content');
