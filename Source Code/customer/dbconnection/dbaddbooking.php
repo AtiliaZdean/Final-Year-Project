@@ -5,12 +5,9 @@ include('../../dbconnection.php');
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Retrieve form data
     $customer_id = $_SESSION['customer_id'];
-    $total_area = $_POST['TotalArea'];
-    $no_of_bedrooms = $_POST['NoOfBedrooms'];
-    $no_of_bathrooms = $_POST['NoOfBathrooms'];
-    $no_of_livingrooms = $_POST['NoOfLivingrooms'];
-    $size_of_kitchen = $_POST['SizeOfKitchen'];
-    $pet = $_POST['Pet'];
+    $house_type_id = $_SESSION['house_id'];
+    $address = $_POST['Address'];
+    $hours_booked = $_POST['HoursBooked'];
     $custom_request = $_POST['AdditionalReq'];
     $total = $_POST['total'];
     $duration = $_POST['duration'];
@@ -25,11 +22,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Insert into booking table
         $stmt_booking = $conn->prepare(
-            "INSERT INTO booking (customer_id, total_area_sqft, no_of_bedrooms, no_of_bathrooms, no_of_livingroooms, size_of_kitchen_sqft, pet, no_of_cleaners, custom_request, total_RM, estimated_duration_hour, scheduled_date, scheduled_time, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
+            "INSERT INTO booking (customer_id, house_id, address, hours_booked, no_of_cleaners, custom_request, total_RM, estimated_duration_hour, scheduled_date, scheduled_time, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
         );
 
-        $stmt_booking->bind_param("idiiidsisddss", $customer_id, $total_area, $no_of_bedrooms, $no_of_bathrooms, $no_of_livingrooms, $size_of_kitchen, $pet, $no_of_cleaners, $custom_request, $total, $duration, $scheduled_date, $scheduled_time);
+        $stmt_booking->bind_param("iisdisddss", $customer_id, $house_type_id, $address, $hours_booked, $no_of_cleaners, $custom_request, $total, $duration, $scheduled_date, $scheduled_time);
         $stmt_booking->execute();
         $booking_id = $conn->insert_id;
         $stmt_booking->close();
@@ -39,7 +36,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             "INSERT INTO payment (booking_id, status)
              VALUES (?, 'Pending')"
         );
-
         $stmt_payment->bind_param("i", $booking_id);
         $stmt_payment->execute();
         $stmt_payment->close();
@@ -48,6 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt_assign = $conn->prepare("CALL AssignCleaners(?, ?, ?, ?, ?, ?, @success, @message)");
         $stmt_assign->bind_param("isssdi", $booking_id, $city, $scheduled_date, $scheduled_time, $duration, $no_of_cleaners);
         $stmt_assign->execute();
+        $stmt_assign->close();
 
         // Check if assignment was successful
         $result = $conn->query("SELECT @success as success, @message as message");
