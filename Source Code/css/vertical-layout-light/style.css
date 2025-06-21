@@ -22172,6 +22172,15 @@ code {
   background: #f59095;
 }
 
+.card.card-turqoise {
+  background: #0097b2;
+  color: #ffffff;
+}
+
+.card.card-turqoise:hover {
+  background: #8dc4ce;
+}
+
 .card-inverse-primary {
   background: rgba(75, 73, 172, 0.2);
   border: 1px solid #45439e;
