@@ -300,7 +300,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
                                                 <div class="form-group row">
                                                     <label class="col-sm-3 col-form-label">Status</label>
                                                     <div class="col-sm-9">
-                                                        <span class="form-control <?= $statusClass ?>" style="border:0;"><?= htmlspecialchars($booking['status']) ?></span>
+                                                        <span class="form-control <?= $statusClass ?>" style="border:0;">
+                                                            <?= htmlspecialchars($booking['status'] === 'Attention' ? 'Pending' : $booking['status']) ?>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -310,7 +312,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
                                                 <div class="form-group row">
                                                     <label class="col-sm-3 col-form-label">Payment Status</label>
                                                     <div class="col-sm-9">
-                                                        <span class="form-control <?= $paymentStatusClass ?>" style="border:0;"><?= htmlspecialchars($booking['payment_status']) ?></span>
+                                                        <span class="form-control <?= $paymentStatusClass ?>" style="border:0;">
+                                                            <?= htmlspecialchars($booking['payment_status'] === 'Attention' ? 'Pending' : $booking['payment_status']) ?>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -457,6 +461,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
                                             </div>
 
                                             <?php if (htmlspecialchars($booking['status']) == 'Completed') { ?>
+                                                <!-- Generate receipt -->
+                                                <div class="row row-center mb-5 receipt">
+                                                    <button type="button" class="btn btn-primary" onclick="showReceipt(<?= $booking['booking_id'] ?>)">Receipt</button>
+                                                </div>
+
                                                 <div class="row row-center">
                                                     <h5>Feedback</h5>
                                                 </div>
@@ -524,6 +533,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
                 </div>
             </div>
         <?php endif; ?>
+
+        <!-- Receipt Modal -->
+        <div class="modal fade" id="receiptModal" tabindex="-1" role="dialog" aria-labelledby="receiptModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="receiptModalLabel">Booking Receipt</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="receiptContent">
+                        <!-- Receipt content will be inserted here dynamically -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="printReceipt()">Print Receipt</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
         <footer class="footer"></footer>
     </div>
@@ -574,7 +604,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
 
         function toggleCollapse(element) {
             // Check if the click target is inside the form or star rating
-            if (event.target.closest('form') || event.target.closest('.star-rating')) {
+            if (event.target.closest('form') || event.target.closest('.star-rating') || event.target.closest('.receipt')) {
                 return; // Don't collapse if clicking inside form or star rating
             }
 
@@ -584,6 +614,119 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
 
             // Toggle the show class
             content.classList.toggle('show');
+        }
+
+        function showReceipt(bookingId) {
+            // Get the booking data for this receipt
+            const booking = <?php echo json_encode($bookings); ?>.find(b => b.booking_id == bookingId);
+
+            if (!booking) {
+                alert('Booking data not found');
+                return;
+            }
+
+            // Format the receipt content
+            const formattedDate = new Date(booking.scheduled_date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const receiptContent = `
+                <div class="receipt-container">
+                    <div class="text-center mb-4">
+                        <h3>HygieiaHub Cleaning Service</h3>
+                        <p>Phone: 012-3456789 | Email: info@hygieiahub.com</p>
+                    </div><hr>
+            
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Booking Details</h5>
+                            <p><strong>Booking ID:</strong> ${booking.booking_id}</p>
+                            <p><strong>Date:</strong> ${formattedDate}</p>
+                            <p><strong>Time:</strong> ${booking.scheduled_time.substr(0,5)}</p>
+                            <p><strong>Status:</strong> ${booking.status}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Customer Information</h5>
+                            <p><strong>Name:</strong> <?php echo htmlspecialchars($_SESSION['name']); ?></p>
+                            <p><strong>Address:</strong> ${booking.address}</p>
+                        </div>
+                    </div><hr>
+            
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th class="text-center">Quantity/Hours</th>
+                                <th class="text-right">Amount (RM)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Base Cleaning (${booking.house})</td>
+                                <td class="text-center">${booking.hours_booked} hours</td>
+                                <td class="text-right">${(booking.total_RM / booking.hours_booked).toFixed(2)}</td>
+                            </tr>
+                            ${booking.services ? `
+                            <tr>
+                                <td colspan="3" class="font-weight-bold">Additional Services</td>
+                            </tr>
+                            ${booking.services.split(', ').map(service => `
+                            <tr>
+                                <td>${service}</td>
+                                <td class="text-center">1</td>
+                                <td class="text-right">${service.includes('Deep') ? '50.00' : '30.00'}</td>
+                            </tr>
+                            `).join('')}
+                            ` : ''}
+                            <tr>
+                                <td colspan="2" class="font-weight-bold text-right">Subtotal</td>
+                                <td class="text-right font-weight-bold">${(booking.total_RM * 0.94).toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="font-weight-bold text-right">Service Tax (6%)</td>
+                                <td class="text-right">${(booking.total_RM * 0.06).toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="font-weight-bold text-right">Total Amount</td>
+                                <td class="text-right font-weight-bold">${parseFloat(booking.total_RM).toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+            
+                    <div class="payment-info mt-4">
+                        <h5>Payment Information</h5>
+                        <p><strong>Payment Status:</strong> ${booking.payment_status}</p>
+                        <p><strong>Payment Method:</strong> Cash on Delivery</p>
+                    </div><hr>
+            
+                    <div class="terms mt-4">
+                        <p class="small text-muted">Thank you for choosing HygieiaHub!</p>
+                        <p class="small text-muted">Cancellation policy: Bookings can be cancelled at least 24 hours before scheduled time.</p>
+                    </div>
+                </div>
+            `;
+
+            // Insert content into modal
+            document.getElementById('receiptContent').innerHTML = receiptContent;
+
+            // Show modal
+            $('#receiptModal').modal('show');
+        }
+
+        // Function to print the receipt
+        function printReceipt() {
+            const printContent = document.getElementById('receiptContent').innerHTML;
+            const originalContent = document.body.innerHTML;
+
+            document.body.innerHTML = printContent;
+            window.print();
+            document.body.innerHTML = originalContent;
+
+            // Re-show the modal after printing
+            $('#receiptModal').modal('show');
         }
     </script>
 

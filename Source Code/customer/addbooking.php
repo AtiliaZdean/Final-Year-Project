@@ -148,7 +148,7 @@ while ($row = $result->fetch_assoc()) {
                                                 <!-- Address -->
                                                 <div class="col-md-6">
                                                     <div class="form-group">
-                                                        <label for="Address">Address</label>
+                                                        <label for="Address">Address<span class="text-danger"> *</span></label>
                                                         <input type="text" class="form-control" name="Address" id="Address" value="<?php echo $address; ?>" readonly>
                                                     </div>
                                                 </div>
