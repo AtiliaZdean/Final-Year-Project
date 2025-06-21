@@ -67,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $conn->commit();
 
-        $_SESSION['status'] = "Your booking has been successfully requested.";
+        $_SESSION['status'] = "Your booking has been successfully requested. Thank you for choosing us!";
         header("Location: ../addbooking.php");
         exit;
     } catch (Exception $e) {
