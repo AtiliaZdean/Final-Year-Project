@@ -238,11 +238,11 @@ $table_data = $result->fetch_assoc();
                                         <label class="mr-3">Search by :</label>
 
                                         <!-- Periodicity -->
-                                        <select class="form-control form-control-sm mr-3" name="Periodicity" id="Periodicity" onchange="updateDateInput()">
+                                        <!-- <select class="form-control form-control-sm mr-3" name="Periodicity" id="Periodicity" onchange="updateDateInput()">
                                             <option value="Daily" <?php echo $periodicity === 'Daily' ? 'selected' : ''; ?>>Daily</option>
                                             <option value="Monthly" <?php echo $periodicity === 'Monthly' ? 'selected' : ''; ?>>Monthly</option>
                                             <option value="Yearly" <?php echo $periodicity === 'Yearly' ? 'selected' : ''; ?>>Yearly</option>
-                                        </select>
+                                        </select> -->
 
                                         <!-- Date input (changes based on periodicity) -->
                                         <?php if ($periodicity === 'Daily'): ?>
@@ -336,13 +336,13 @@ $table_data = $result->fetch_assoc();
                                                 $result = $stmt->get_result();
                                                 while ($row = $result->fetch_assoc()) {
                                                     echo "<tr>
-                                    <td>{$row['submitted_at']}</td>
+                                    <td>" . date('d-m-Y H:i', strtotime($row['submitted_at'])) . "</td>
                                     <td>{$row['customer_name']}</td>
                                     <td>{$row['booking_id']}</td>
                                     <td>{$row['rating']}★</td>
                                     <td>{$row['comment']}</td>
                                 </tr>";
-                                                }
+                                                } 
                                                 ?>
                                             </tbody>
                                         </table>

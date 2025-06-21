@@ -311,10 +311,10 @@ if (!isset($_SESSION['staff_id'])) {
 
                 <!-- Average Ratings -->
                 <div class="col-md-6 mb-4 transparent">
-                  <div class="card">
+                  <div class="card card-turqoise">
                     <div class="card-body">
                       <p class="mb-4">Today's Feedback</p>
-                      <p class="fs-30 mb-2">Average Rating: <?= number_format($today_average_rating, 2) ?> <i class="ti-star text-primary"></i></p>
+                      <p class="fs-30 mb-2">Average Rating: <?= number_format($today_average_rating, 2) ?> <i class="ti-star"></i></p>
                       <p><?= $today_feedback_count ?> Feedbacks</p>
                     </div>
                   </div>
