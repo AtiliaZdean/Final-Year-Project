@@ -221,6 +221,8 @@ if (!isset($_SESSION['staff_id'])) {
                                                               GROUP_CONCAT(DISTINCT s.name SEPARATOR ', ') AS cleaners,
                                                               GROUP_CONCAT(DISTINCT asv.name SEPARATOR ', ') AS services,
                                                               p.status AS payment_status,
+                                                              f.rating AS rating,
+                                                              f.comment AS comment,
                                                               bl.made_at, bl.made_by
                                                               FROM branch_booking b
                                                               JOIN CUSTOMER c ON b.customer_id = c.customer_id
@@ -230,6 +232,7 @@ if (!isset($_SESSION['staff_id'])) {
                                                               LEFT JOIN BOOKING_SERVICE bs ON b.booking_id = bs.booking_id
                                                               LEFT JOIN ADDITIONAL_SERVICE asv ON bs.service_id = asv.service_id
                                                               LEFT JOIN PAYMENT p ON p.booking_id = b.booking_id
+                                                              LEFT JOIN FEEDBACK f ON f.booking_id = b.booking_id
                                                               LEFT JOIN (SELECT bl1.*
                                                                             FROM booking_log bl1
                                                                             INNER JOIN (
@@ -301,6 +304,8 @@ if (!isset($_SESSION['staff_id'])) {
                                                             $row['services'] ?? '',
                                                             $row['status'],
                                                             $row['payment_status'],
+                                                            $row['rating'],
+                                                            $row['comment'],
                                                             $row['note'] ?? '',
                                                             $row['made_by'] ?? '',
                                                             $row['made_at'] ?? ''
@@ -573,6 +578,41 @@ if (!isset($_SESSION['staff_id'])) {
                                             <div class="col-md-12">
                                                 <small id="latestUpdate" class="text-muted">No updates made.</small>
                                             </div>
+                                        </div><br>
+
+                                        <div id="feedback">
+                                            <div class="row mb-3">
+                                                <div class="col-md-12">
+                                                    <h5>Feedback</h5>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <!-- Rating -->
+                                                <div class="col-md-6">
+                                                    <div class="form-group row">
+                                                        <label class="col-sm-3 col-form-label">Rating</label>
+                                                        <div class="col-sm-9">
+                                                            <div class="input-group">
+                                                                <input type="text" class="form-control" id="Rating" readonly>
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text bg-primary text-white ti-star"></span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Comment -->
+                                                <div class="col-md-6">
+                                                    <div class="form-group row">
+                                                        <label class="col-sm-3 col-form-label">Comment</label>
+                                                        <div class="col-sm-9">
+                                                            <input type="text" class="form-control" name="Comment" id="Comment" readonly>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <!-- Buttons -->
@@ -638,7 +678,7 @@ if (!isset($_SESSION['staff_id'])) {
         });
 
         // Open modal when button pressed
-        function openModal(bookingId, customerName, phoneNumber, house, address, hoursBooked, customRequest, scheduledDate, scheduledTime, estimatedDuration, totalAmount, noOfCleaners, cleaners, services, status, paymentStatus, note, lastUpdatedBy, lastUpdateTime) {
+        function openModal(bookingId, customerName, phoneNumber, house, address, hoursBooked, customRequest, scheduledDate, scheduledTime, estimatedDuration, totalAmount, noOfCleaners, cleaners, services, status, paymentStatus, rating, comment, note, lastUpdatedBy, lastUpdateTime) {
             // Set all the values
             $('#CustomerName').val(customerName);
             $('#PhoneNumber').val(phoneNumber);
@@ -653,18 +693,50 @@ if (!isset($_SESSION['staff_id'])) {
             $('#TotalAmount').val(totalAmount);
             $('#Cleaners').val(cleaners);
             $('#Services').val(services);
+            $('#Note').val(note);
+            $('#Rating').val(rating);
+            $('#Comment').val(comment);
+            $('#BookingId').val(bookingId);
+
+            // Calculate estimated end time
+            const scheduledDateTime = new Date(scheduledDate + 'T' + scheduledTime);
+            const endTime = new Date(scheduledDateTime.getTime() + estimatedDuration * 60 * 60 * 1000);
+            const currentTime = new Date();
+
             const statusSelect = document.getElementById('StatusModal');
-            document.getElementById('StatusModal').value = status;
+
+            // If current time is before end time, disable "Completed" option
+            if (currentTime < endTime) {
+                Array.from(statusSelect.options).forEach(option => {
+                    if (option.value === 'Completed') {
+                        option.disabled = true;
+                        option.title = "Cannot complete booking before estimated end time";
+                    }
+                });
+            } else {
+                Array.from(statusSelect.options).forEach(option => {
+                    if (option.value === 'Completed') {
+                        option.disabled = false;
+                        option.title = "";
+                    }
+                });
+            }
+
+            statusSelect.value = status;
             const paymentStatusSelect = document.getElementById('PaymentStatusModal');
             paymentStatusSelect.value = paymentStatus;
-            $('#Note').val(note);
-            $('#BookingId').val(bookingId);
 
             if (lastUpdatedBy && lastUpdateTime) {
                 const formattedTime = formatDateTime(lastUpdateTime);
                 $('#latestUpdate').text(`Latest update by ${lastUpdatedBy} at ${formattedTime}`);
             } else {
                 $('#latestUpdate').text('No updates made.');
+            }
+
+            if (rating) {
+                $('#feedback').show();
+            } else {
+                $('#feedback').hide();
             }
 
             $('#bookingModal').modal('show');

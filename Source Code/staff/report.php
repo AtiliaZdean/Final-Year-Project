@@ -298,15 +298,17 @@ $table_data = $result->fetch_assoc();
                             </div>
                         </div>
 
-                        <!-- Chart -->
-                        <div id="chart-container" class="col-lg-6 grid-margin stretch-card">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h4 class="card-title">Sales Trend (Last 12 <?php echo strtolower($periodicity === 'Yearly' ? 'Years' : ($periodicity === 'Monthly' ? 'Months' : 'Days')); ?>)</h4>
-                                    <canvas id="areaChart"></canvas>
+                        <?php if ($periodicity !== 'Yearly') { ?>
+                            <!-- Chart -->
+                            <div id="chart-container" class="col-lg-6 grid-margin stretch-card">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="card-title">Sales Trend (Last 12 <?php echo strtolower($periodicity === 'Yearly' ? 'Years' : ($periodicity === 'Monthly' ? 'Months' : 'Days')); ?>)</h4>
+                                        <canvas id="areaChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        <?php } ?>
                     </div>
 
                     <div class="row">
