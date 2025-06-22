@@ -371,7 +371,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
                                                     <div class="form-group row">
                                                         <label class="col-sm-3 col-form-label">Number of Hours</label>
                                                         <div class="col-sm-9">
-                                                            <input type="number" class="form-control" value="<?= htmlspecialchars($booking['hours_booked']) ?>" readonly>
+                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['hours_booked']) ?> hours" readonly>
                                                         </div>
                                                     </div>
                                                 </div>

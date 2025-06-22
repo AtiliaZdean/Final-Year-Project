@@ -112,6 +112,30 @@ while ($row = $result->fetch_assoc()) {
                         </div>
                     </div>
 
+                    <div class="row row-center">
+                        <?php
+                        // Success message
+                        if (isset($_SESSION['status'])) {
+                        ?>
+                            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                                <?php echo $_SESSION['status']; ?>
+                            </div>
+                        <?php
+                            unset($_SESSION['status']);
+                        }
+
+                        // Error message
+                        if (isset($_SESSION['EmailMessage'])) {
+                        ?>
+                            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                                <?php echo $_SESSION['EmailMessage']; ?>
+                            </div>
+                        <?php
+                            unset($_SESSION['EmailMessage']);
+                        }
+                        ?>
+                    </div>
+
                     <?php
                     if (isset($_SESSION['customer_id'])) {
                     ?>
@@ -193,12 +217,25 @@ while ($row = $result->fetch_assoc()) {
                                                 </div>
                                             </div>
 
+                                            <br>
                                             <div class="row row-center">
                                                 <p class="card-description">
                                                     <strong>Base Price: RM <span id="base-price">0.00</span></strong></br>
                                                     <strong>Base duration: <span id="base-duration">0</span> hour</strong>
                                                 </p>
                                             </div>
+
+                                            <br>
+                                            <p class="card-description">
+                                                <small class="text-muted">Our standard cleaning package covers essential cleaning tasks to keep your home fresh and tidy. This includes:<br>
+                                                    ✔ Dusting & Wiping – Furniture, shelves, countertops, and surfaces<br>
+                                                    ✔ Vacuuming & Mopping – Floors (hardwood, tiles, laminate)<br>
+                                                    ✔ Bathroom Cleaning – Sinks, mirrors, countertops, and toilet surfaces<br>
+                                                    ✔ Kitchen Cleaning – Countertops, stovetop (exterior), and sink<br>
+                                                    ✔ Trash Removal – Emptying bins and replacing liners<br>
+                                                    ✔ Light Organization – Straightening up common areas
+                                                </small>
+                                            </p>
 
                                             <input type="hidden" name="total" id="total" value="0">
                                             <input type="hidden" name="duration" id="duration" value="0">
@@ -263,30 +300,6 @@ while ($row = $result->fetch_assoc()) {
                             </div>
 
                             <div class="row row-center">
-                                <?php
-                                // Success message
-                                if (isset($_SESSION['status'])) {
-                                ?>
-                                    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                                        <?php echo $_SESSION['status']; ?>
-                                    </div>
-                                <?php
-                                    unset($_SESSION['status']);
-                                }
-
-                                // Error message
-                                if (isset($_SESSION['EmailMessage'])) {
-                                ?>
-                                    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                                        <?php echo $_SESSION['EmailMessage']; ?>
-                                    </div>
-                                <?php
-                                    unset($_SESSION['EmailMessage']);
-                                }
-                                ?>
-                            </div>
-
-                            <div class="row row-center">
                                 <button type="button" class="btn btn-primary mr-2" id="calculateTotalBtn">Calculate Total</button>
                                 <input type="reset" class="btn btn-light" value="Reset" onclick="resetForms()">
                             </div>
@@ -302,7 +315,8 @@ while ($row = $result->fetch_assoc()) {
                                         </div>
                                         <div class="modal-body">
                                             <p id="bookingDetails"></p>
-                                            <p id="costDetails"></p><hr>
+                                            <p id="costDetails"></p>
+                                            <hr>
                                             <ul>
                                                 <li class="text-muted"><small class="form-text text-muted">Pay via Cash on Delivery (COD)</small></li>
                                                 <li class="text-muted"><small class="form-text text-muted">Cancellation of booking can be made at least 24 hours before the scheduled date and time.</small></li>
@@ -324,7 +338,7 @@ while ($row = $result->fetch_assoc()) {
                     ?>
                         <div class="row row-center">
                             <div class="col-md-12 col-center grid-margin">
-                                <p><a href="register.php" class="text-primary">Sign in</a> first to make a booking.</p>
+                                <p><a href="login.php" class="text-primary">Sign in</a> first to make a booking.</p>
                             </div>
                         </div>
                     <?php
@@ -491,6 +505,7 @@ while ($row = $result->fetch_assoc()) {
             selectedDate.setHours(0, 0, 0, 0); // Reset time part to midnight
 
             // Reset time selection if invalid date
+
             if (selectedDate <= today) {
                 alert("Bookings must be made at least 1 day in advance and in the future.");
                 dateInput.value = '';
@@ -507,14 +522,29 @@ while ($row = $result->fetch_assoc()) {
         function validateTotalDuration() {
             const hoursBooked = parseFloat(document.getElementById('HoursBooked').value) || 0;
             const additionalServices = calculateAdditionalServices();
-            const totalDuration = hoursBooked + additionalServices.duration;
+            const cleaners = parseInt(document.getElementById('NoOfCleaners').value) || 1;
+            const totalDuration = (hoursBooked + additionalServices.duration) / cleaners;
 
             if (totalDuration > CONFIG.maxDuration) {
-                alert(`Total duration cannot exceed ${CONFIG.maxDuration} hours (currently ${totalDuration} hours). Please reduce either base hours or additional services or add more cleaner.`);
+                alert(`Effective duration cannot exceed ${CONFIG.maxDuration} hours (currently ${totalDuration.toFixed(1)} hours).\n\nPlease reduce base hours or additional services`);
                 document.getElementById('HoursBooked').value = Math.min(CONFIG.maxDuration - additionalServices.duration, CONFIG.maxDuration);
                 updateBasePrice();
+
+                const maxAllowedHours = (CONFIG.maxDuration * cleaners) - additionalServices.duration;
+                document.getElementById('HoursBooked').value = Math.max(
+                    houseTypes[document.getElementById('HouseType').value].min_hours, // Ensure it's not below minimum
+                    Math.min(maxAllowedHours, CONFIG.maxDuration) // Cap at max duration
+                ).toFixed(1);
+
+                updateBasePrice();
+                return false;
             }
+            return true;
         }
+
+        document.getElementById('NoOfCleaners').addEventListener('change', function() {
+            validateTotalDuration();
+        });
 
         // Calculate and display total
         function calculateAndDisplayTotal() {
@@ -522,6 +552,11 @@ while ($row = $result->fetch_assoc()) {
             const form = document.getElementById('bookingForm');
             if (!form.checkValidity()) {
                 form.reportValidity();
+                return;
+            }
+
+            // Validate total duration (including cleaner consideration)
+            if (!validateTotalDuration()) {
                 return;
             }
 
