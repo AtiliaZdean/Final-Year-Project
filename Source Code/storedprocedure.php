@@ -27,6 +27,7 @@ CREATE PROCEDURE ManageStaff(
     IN p_role VARCHAR(7),
     IN p_status VARCHAR(9),
     IN p_made_by VARCHAR(100),
+    IN p_image_path VARCHAR(255),
     OUT p_result INT
 )
 BEGIN
@@ -35,6 +36,7 @@ BEGIN
     DECLARE v_old_branch VARCHAR(100);
     DECLARE v_old_role VARCHAR(7);
     DECLARE v_old_status VARCHAR(9);
+    DECLARE v_old_image_path VARCHAR(255);
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
@@ -47,8 +49,8 @@ BEGIN
     
     IF p_action = 'insert' THEN
         -- Insert new staff with status default to 'active'
-        INSERT INTO staff (name, email, password, phone_number, branch, role)
-        VALUES (p_name, p_email, p_password, p_phone_number, p_branch, p_role);
+        INSERT INTO staff (name, email, password, phone_number, branch, role, image_path)
+        VALUES (p_name, p_email, p_password, p_phone_number, p_branch, p_role, p_image_path);
         
         -- Log the activity
         INSERT INTO staff_log (
@@ -62,8 +64,8 @@ BEGIN
         
     ELSEIF p_action = 'update' THEN
         -- Get current values for logging
-        SELECT email, phone_number, branch, role, status 
-        INTO v_old_email, v_old_phone, v_old_branch, v_old_role, v_old_status
+        SELECT email, phone_number, branch, role, status, image_path 
+        INTO v_old_email, v_old_phone, v_old_branch, v_old_role, v_old_status, v_old_image_path
         FROM staff 
         WHERE staff_id = p_staff_id;
         
@@ -74,7 +76,8 @@ BEGIN
             email = p_email,
             phone_number = p_phone_number,
             branch = p_branch,
-            status = p_status
+            status = p_status,
+            image_path = IFNULL(p_image_path, image_path)
         WHERE staff_id = p_staff_id;
         
         -- Log the activity

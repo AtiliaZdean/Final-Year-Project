@@ -1,7 +1,7 @@
 <?php
 $servername = "localhost";
-$username = "root";
-$password = "";
+$username = "B032210369";
+$password = "hygieiahub";
 $dbname = "hygieiahub";
 
 // Create connection
