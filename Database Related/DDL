@@ -1,93 +1,123 @@
 #DDL
 #MySQL
 
+-- HOUSE_TYPE
 CREATE TABLE HOUSE_TYPE (
-  house_id INT(11) AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(50) NOT NULL UNIQUE,
-  base_hourly_rate DECIMAL(6,2) NOT NULL,
-  min_hours DECIMAL(4,2) NOT NULL
+    house_id INT(11) NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    base_hourly_rate DECIMAL(5,2) NOT NULL,
+    min_hours DECIMAL(3,2) NOT NULL,
+    PRIMARY KEY (house_id)
 );
 
+-- CUSTOMER
 CREATE TABLE CUSTOMER (
-  customer_id INT(11) AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(100) NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  phone_number VARCHAR(11) NOT NULL,
-  address VARCHAR(300) NOT NULL,
-  city VARCHAR(300) NOT NULL,
-  state VARCHAR(300) NOT NULL,
-  house_id INT(11) NOT NULL,  --customer set when registering
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (house_id) REFERENCES HOUSE_TYPE(house_id)
+    customer_id INT(11) NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(11) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (customer_id)
 );
 
+-- STAFF
 CREATE TABLE STAFF (
-  staff_id INT(11) AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(100),
-  password VARCHAR(255),
-  phone_number VARCHAR(11) NOT NULL,
-  branch VARCHAR(100) NOT NULL,
-  role VARCHAR(7) NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  status VARCHAR(9) DEFAULT 'active' NOT NULL
+    staff_id INT(11) NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100),
+    password VARCHAR(255),
+    phone_number VARCHAR(11) NOT NULL,
+    branch VARCHAR(100) NOT NULL,
+    role VARCHAR(7) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(9) NOT NULL DEFAULT 'Active',
+    image_path VARCHAR(255),
+    PRIMARY KEY (staff_id)
 );
 
+-- ADDITIONAL_SERVICE
 CREATE TABLE ADDITIONAL_SERVICE (
-  service_id INT(11) AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  description VARCHAR(300),
-  price_RM DECIMAL(5,2) NOT NULL,
-  duration_hour DECIMAL(4,2) NOT NULL
+    service_id INT(11) NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(300),
+    price_RM DECIMAL(5,2) NOT NULL,
+    duration_hour DECIMAL(3,2) NOT NULL,
+    PRIMARY KEY (service_id)
 );
 
+-- CUSTOMER_ADDRESSES
+CREATE TABLE CUSTOMER_ADDRESSES (
+    address_id INT(11) NOT NULL AUTO_INCREMENT,
+    customer_id INT(11) NOT NULL,
+    address_label VARCHAR(50) NOT NULL,
+    house_id INT(11) NOT NULL,
+    address VARCHAR(300) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    is_default VARCHAR(50) DEFAULT '1',
+    PRIMARY KEY (address_id),
+    FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id),
+    FOREIGN KEY (house_id) REFERENCES HOUSE_TYPE(house_id)
+);
+
+-- BOOKING
 CREATE TABLE BOOKING (
-  booking_id INT(11) AUTO_INCREMENT PRIMARY KEY,
-  customer_id INT(11) NOT NULL,
-  house_id INT(11) NOT NULL,
-  address VARCHAR(1000) NOT NULL,
-  hours_booked DECIMAL(4,2) NOT NULL,
-  no_of_cleaners INT(2) NOT NULL, --number_of_cleaners
-  custom_request VARCHAR(300),
-  total_RM DECIMAL(6,2) NOT NULL, --total_price
-  estimated_duration_hour DECIMAL(4,2) NOT NULL, --total_duration
-  scheduled_date DATE NOT NULL,
-  scheduled_time TIME NOT NULL,
-  status VARCHAR(9) NOT NULL,
-  FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id),
-  FOREIGN KEY (house_id) REFERENCES HOUSE_TYPE(house_id)
+    booking_id INT(11) NOT NULL AUTO_INCREMENT,
+    customer_id INT(11) NOT NULL,
+    address_id INT(11),
+    house_id INT(11) NOT NULL,
+    address VARCHAR(1000) NOT NULL,
+    hours_booked DECIMAL(4,2) NOT NULL,
+    no_of_cleaners INT(2) NOT NULL,
+    custom_request VARCHAR(300),
+    total_RM DECIMAL(6,2) NOT NULL,
+    estimated_duration_hour DECIMAL(4,2) NOT NULL,
+    scheduled_date DATE NOT NULL,
+    scheduled_time TIME NOT NULL,
+    status VARCHAR(9) NOT NULL,
+    note VARCHAR(300),
+    PRIMARY KEY (booking_id),
+    FOREIGN KEY (customer_id) REFERENCES CUSTOMER(customer_id),
+    FOREIGN KEY (address_id) REFERENCES CUSTOMER_ADDRESSES(address_id),
+    FOREIGN KEY (house_id) REFERENCES HOUSE_TYPE(house_id)
 );
 
+-- BOOKING_SERVICE (junction table)
 CREATE TABLE BOOKING_SERVICE (
-  booking_id INT(11) NOT NULL,
-  service_id INT(11) NOT NULL,
-  PRIMARY KEY (booking_id, service_id),
-  FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id),
-  FOREIGN KEY (service_id) REFERENCES ADDITIONAL_SERVICE(service_id)
+    booking_id INT(11) NOT NULL,
+    service_id INT(11) NOT NULL,
+    PRIMARY KEY (booking_id, service_id),
+    FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id),
+    FOREIGN KEY (service_id) REFERENCES ADDITIONAL_SERVICE(service_id)
 );
 
+-- BOOKING_CLEANER (junction table)
 CREATE TABLE BOOKING_CLEANER (
-  booking_id INT(11) NOT NULL,
-  staff_id INT(11) NOT NULL,
-  PRIMARY KEY (booking_id, staff_id),
-  FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id),
-  FOREIGN KEY (staff_id) REFERENCES STAFF(staff_id)
+    booking_id INT(11) NOT NULL,
+    staff_id INT(11) NOT NULL,
+    PRIMARY KEY (booking_id, staff_id),
+    FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id),
+    FOREIGN KEY (staff_id) REFERENCES STAFF(staff_id)
 );
 
+-- PAYMENT
 CREATE TABLE PAYMENT (
-  payment_id INT(11) AUTO_INCREMENT PRIMARY KEY,
-  status VARCHAR(9) NOT NULL,
-  booking_id INT(11) NOT NULL,
-  payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id)
+    payment_id INT(11) NOT NULL AUTO_INCREMENT,
+    booking_id INT(11) NOT NULL,
+    status VARCHAR(9) NOT NULL,
+    payment_date DATETIME,
+    PRIMARY KEY (payment_id),
+    FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id)
 );
 
+-- FEEDBACK
 CREATE TABLE FEEDBACK (
-  feedback_id INT(11) AUTO_INCREMENT PRIMARY KEY,
-  booking_id INT(11) NOT NULL,
-  rating FLOAT NOT NULL,
-  submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  comment VARCHAR(1000),
-  FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id)
+    feedback_id INT(11) NOT NULL AUTO_INCREMENT,
+    booking_id INT(11) NOT NULL,
+    rating FLOAT NOT NULL,
+    submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    comment VARCHAR(300),
+    PRIMARY KEY (feedback_id),
+    FOREIGN KEY (booking_id) REFERENCES BOOKING(booking_id)
 );
