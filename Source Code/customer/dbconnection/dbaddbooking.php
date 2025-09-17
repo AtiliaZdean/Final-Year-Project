@@ -5,28 +5,45 @@ include('../../dbconnection.php');
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Retrieve form data
     $customer_id = $_SESSION['customer_id'];
-    $house_type_id = $_SESSION['house_id'];
-    $address = $_POST['Address'];
+    $address_id = $_POST['AddressSelect'];
     $hours_booked = $_POST['HoursBooked'];
     $custom_request = $_POST['AdditionalReq'];
     $total = $_POST['total'];
     $duration = $_POST['duration'];
     $scheduled_date = $_POST['Date'];
     $scheduled_time = $_POST['Time'];
-    $city = $_POST['City'] ?? $_SESSION['city'];
+    $city = $_POST['City'];
     $additional_services = $_POST['additional_services'] ?? [];
     $no_of_cleaners = intval($_POST['NoOfCleaners']);
 
     try {
         $conn->begin_transaction();
 
+        // Get full address details from address_id
+        $stmt_address = $conn->prepare(
+            "SELECT a.address, a.city, a.state, a.house_id, h.name as house_type 
+             FROM customer_addresses a
+             JOIN HOUSE_TYPE h ON a.house_id = h.house_id
+             WHERE a.address_id = ? AND a.customer_id = ?"
+        );
+        $stmt_address->bind_param("ii", $address_id, $customer_id);
+        $stmt_address->execute();
+        $address_data = $stmt_address->get_result()->fetch_assoc();
+        $stmt_address->close();
+
+        if (!$address_data) {
+            throw new Exception("Invalid address selected");
+        }
+
+        $full_address = $address_data['address'] . ', ' . $address_data['city'] . ', ' . $address_data['state'];
+
         // Insert into booking table
         $stmt_booking = $conn->prepare(
-            "INSERT INTO booking (customer_id, house_id, address, hours_booked, no_of_cleaners, custom_request, total_RM, estimated_duration_hour, scheduled_date, scheduled_time, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
+            "INSERT INTO booking (customer_id, address_id, house_id, address, hours_booked, no_of_cleaners, custom_request, total_RM, estimated_duration_hour, scheduled_date, scheduled_time, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
         );
 
-        $stmt_booking->bind_param("iisdisddss", $customer_id, $house_type_id, $address, $hours_booked, $no_of_cleaners, $custom_request, $total, $duration, $scheduled_date, $scheduled_time);
+        $stmt_booking->bind_param("iiisdisddss", $customer_id, $address_id, $address_data['house_id'], $full_address, $hours_booked, $no_of_cleaners, $custom_request, $total, $duration, $scheduled_date, $scheduled_time);
         $stmt_booking->execute();
         $booking_id = $conn->insert_id;
         $stmt_booking->close();

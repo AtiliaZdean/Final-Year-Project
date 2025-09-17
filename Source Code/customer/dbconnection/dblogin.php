@@ -7,7 +7,7 @@ $email = $_POST['Email'];
 $password = $_POST['Password'];
 
 // Find the data of user
-$sql = "SELECT customer_id, name, password, address, city, state, house_id FROM customer WHERE email = ?";
+$sql = "SELECT customer_id, name, password FROM customer WHERE email = ?";
 $stmt_select = $conn->prepare($sql);
 $stmt_select->bind_param("s", $email);
 $stmt_select->execute();
@@ -19,18 +19,14 @@ if ($stmt_select->num_rows == 0) {
     header("Location: ../login.php");
     exit();
 } else {
-    $stmt_select->bind_result($customer_id, $name, $stored_password, $address, $city, $state, $house_id);
+    $stmt_select->bind_result($customer_id, $name, $stored_password);
     $stmt_select->fetch();
 
     if (password_verify($password, $stored_password)) {
         $_SESSION['customer_id'] = $customer_id;
         $_SESSION['name'] = $name;
-        $_SESSION['address'] = $address;
-        $_SESSION['city'] = $city;
-        $_SESSION['state'] = $state;
-        $_SESSION['house_id'] = $house_id;
 
-        header("Location: ../home.php");
+        header("Location: ../../index.php");
         exit();
     } else {
         $_SESSION['login_error'] = "Invalid Email or Password.";
