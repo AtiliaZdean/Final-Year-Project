@@ -61,4 +61,8 @@ The full academic report for HygieiaHub is available via Google Drive.
 Access is restricted to protect academic integrity and privacy.  
 🔗 [Request Access to Report](https://drive.google.com/file/d/1vjhRTK0r2JeKHcbv0p1LIU04I-6xLbYC/view?usp=sharing)
 
-Prospective employers or academic reviewers may request permission to view the document.
+---
+
+## Contact  
+
+For inquiries, feel free to reach out via email: [shahira.zainuddin@yahoo.com](mailto:shahira.zainuddin@yahoo.com).
