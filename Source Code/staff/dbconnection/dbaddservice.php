@@ -13,6 +13,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $conn->query("SET @made_by = '$staff'");
 
     try {
+        // First check if service name already exists
+        $stmt_check = $conn->prepare(
+            "SELECT COUNT(*) FROM additional_service WHERE name = ?"
+        );
+        $stmt_check->bind_param("s", $name);
+        $stmt_check->execute();
+        $stmt_check->bind_result($count);
+        $stmt_check->fetch();
+        $stmt_check->close();
+
+        if ($count > 0) {
+            $_SESSION['EmailMessage'] = 'A service with this name already exists.';
+            header("Location: ../addservice.php");
+            exit;
+        }
+
         // Insert data into additional_service table
         $stmt_insert = $conn->prepare(
             "INSERT INTO additional_service (name, description, price_RM, duration_hour)

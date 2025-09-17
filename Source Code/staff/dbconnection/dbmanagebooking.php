@@ -8,6 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $status = $_POST['StatusModal'];
     $payment_status = $_POST['PaymentStatusModal'];
     $note = $_POST['Note'];
+    $newCleaners = isset($_POST['NewCleaners']) ? $_POST['NewCleaners'] : [];
     $conn->query("SET @current_user = '" . $_SESSION['staffname'] . "'");
 
     try {
@@ -28,6 +29,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt_booking->bind_param("ssi", $status, $note, $id);
         $stmt_booking->execute();
         $stmt_booking->close();
+
+        // Handle cleaner reassignment if status is Pending and new cleaners are selected
+        if ($status === 'Pending' && !empty($newCleaners)) {
+            // First remove existing cleaners
+            $deleteCleaners = $conn->prepare("DELETE FROM booking_cleaner WHERE booking_id = ?");
+            $deleteCleaners->bind_param("i", $id);
+            $deleteCleaners->execute();
+            $deleteCleaners->close();
+
+            // Add new cleaners
+            $insertCleaner = $conn->prepare("INSERT INTO booking_cleaner (booking_id, staff_id) VALUES (?, ?)");
+
+            foreach ($newCleaners as $cleanerId) {
+                $insertCleaner->bind_param("ii", $id, $cleanerId);
+                $insertCleaner->execute();
+            }
+            $insertCleaner->close();
+        }
 
         // Update payment table
         if ($payment_status == 'Completed') {

@@ -7,6 +7,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['Name'];
     $phone_number = $_POST['PhoneNumber'];
     $made_by = $_SESSION['staffname'];
+    $image_path = null;
+
+    // Handle image upload if it's a cleaner
+    if (isset($_FILES['StaffImage']) && $_FILES['StaffImage']['error'] === UPLOAD_ERR_OK) {
+        $target_dir = "../../media/";
+        $file_extension = pathinfo($_FILES["StaffImage"]["name"], PATHINFO_EXTENSION);
+        $new_filename = 'cleaner_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $file_extension;
+        $target_file = $target_dir . $new_filename;
+        
+        // Check if image file is a actual image
+        $check = getimagesize($_FILES["StaffImage"]["tmp_name"]);
+        if ($check !== false) {
+            // Check file size (2MB max)
+            if ($_FILES["StaffImage"]["size"] <= 2000000) {
+                // Allow certain file formats
+                $allowed_types = ['jpg', 'jpeg', 'png'];
+                if (in_array(strtolower($file_extension), $allowed_types)) {
+                    if (move_uploaded_file($_FILES["StaffImage"]["tmp_name"], $target_file)) {
+                        $image_path = $new_filename;
+                    }
+                }
+            }
+        }
+    }
 
     if (isset($_POST['register'])) {
         $email = $_POST['Email'];
@@ -32,10 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $password = password_hash($raw_password, PASSWORD_DEFAULT);
 
             // Call stored procedure for registration
-            $conn->query("CALL ManageStaff('insert', 0, '$name', '$email', '$password', '$phone_number', '$branch', '$role', '', '$made_by', @result)");
+            $conn->query("CALL ManageStaff('insert', 0, '$name', '$email', '$password', '$phone_number', '$branch', '$role', '', '$made_by', '$image_path', @result)");
             $result = $conn->query("SELECT @result AS result")->fetch_assoc();
         } else {
-            $conn->query("CALL ManageStaff('insert', 0, '$name', '$email', '', '$phone_number', '$branch', '$role', '', '$made_by', @result)");
+            $conn->query("CALL ManageStaff('insert', 0, '$name', '$email', '', '$phone_number', '$branch', '$role', '', '$made_by', '$image_path', @result)");
             $result = $conn->query("SELECT @result AS result")->fetch_assoc();
         }
 
@@ -72,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt_update->close();
             }
 
-            $conn->query("CALL ManageStaff('update', '$id', '$name', '$email', '', '$phone_number', '', '', '', '', @result)");
+            $conn->query("CALL ManageStaff('update', '$id', '$name', '$email', '', '$phone_number', '', '', '', '', '$image_path', @result)");
             $result = $conn->query("SELECT @result AS result")->fetch_assoc();
 
             $_SESSION['staffname'] = $name;
@@ -98,8 +122,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($pending_count > 0) {
             echo "<script>alert('Cannot update staff - she/he is being assigned in pending bookings.');</script>";
         } else {
+            // Get current image path if not uploading new image
+            if ($image_path === null) {
+                $stmt = $conn->prepare("SELECT image_path FROM staff WHERE staff_id = ?");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $stmt->bind_result($current_image);
+                $stmt->fetch();
+                $stmt->close();
+                $image_path = $current_image;
+            }
+            
             // Call stored procedure for update
-            $conn->query("CALL ManageStaff('update', '$id', '$name', '', '', '$phone_number', '$branch', '', '$status', '$made_by', @result)");
+            $conn->query("CALL ManageStaff('update', '$id', '$name', '', '', '$phone_number', '$branch', '', '$status', '$made_by', '$image_path', @result)");
             $result = $conn->query("SELECT @result AS result")->fetch_assoc();
 
             // Success/fail message
