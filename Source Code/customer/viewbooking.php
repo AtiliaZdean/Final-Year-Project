@@ -10,6 +10,8 @@ $paymentStatus = isset($_POST['PaymentStatus']) ? $_POST['PaymentStatus'] : '';
 $customer_id = $_SESSION['customer_id'];
 $stmt = "SELECT b.*, 
          GROUP_CONCAT(DISTINCT s.name SEPARATOR ', ') AS cleaners,
+         GROUP_CONCAT(DISTINCT s.staff_id SEPARATOR ', ') AS cleaner_ids,
+         GROUP_CONCAT(DISTINCT s.image_path SEPARATOR ', ') AS cleaner_images,
          GROUP_CONCAT(DISTINCT asv.name SEPARATOR ', ') AS services,
          h.name AS house,
          p.status AS payment_status,
@@ -39,6 +41,40 @@ $stmt->bind_param("i", $customer_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $bookings = $result->fetch_all(MYSQLI_ASSOC);
+
+// Analyze service repetition patterns
+$serviceFrequency = [];
+$lastServiceDates = [];
+
+foreach ($bookings as $booking) {
+    // Count service frequency
+    if (!empty($booking['services'])) {
+        $services = explode(', ', $booking['services']);
+        foreach ($services as $service) {
+            if (!isset($serviceFrequency[$service])) {
+                $serviceFrequency[$service] = 0;
+                $lastServiceDates[$service] = [];
+            }
+            $serviceFrequency[$service]++;
+            $lastServiceDates[$service][] = $booking['scheduled_date'];
+        }
+    }
+}
+
+// Calculate average intervals for repeated services
+$serviceIntervals = [];
+foreach ($lastServiceDates as $service => $dates) {
+    if (count($dates) > 1) {
+        $intervals = [];
+        sort($dates);
+        for ($i = 1; $i < count($dates); $i++) {
+            $date1 = new DateTime($dates[$i - 1]);
+            $date2 = new DateTime($dates[$i]);
+            $intervals[] = $date1->diff($date2)->days;
+        }
+        $serviceIntervals[$service] = array_sum($intervals) / count($intervals);
+    }
+}
 
 // Handle cancellation request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
@@ -106,6 +142,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
     <link rel="stylesheet" href="../vendors/css/vendor.bundle.base.css">
     <link rel="stylesheet" href="../css/vertical-layout-light/style.css">
     <link rel="shortcut icon" href="../images/favicon.png" />
+
+    <style>
+        .cleaner-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .cleaner-image-container {
+            text-align: center;
+            width: 100px;
+        }
+
+        .cleaner-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #eee;
+        }
+
+        .cleaner-name {
+            font-size: 12px;
+            margin-top: 5px;
+            word-break: break-word;
+        }
+    </style>
 </head>
 
 <body>
@@ -113,13 +177,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
         <!-- Header -->
         <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
             <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
-                <a class="navbar-brand brand-logo mr-1" href="home.php"><img src="..\images\HygieaHub logo.png" class="mr-1" alt="HygieiaHub logo" /></a>
+                <a class="navbar-brand brand-logo mr-1" href="../index.php"><img src="..\images\HygieaHub logo.png" class="mr-1" alt="HygieiaHub logo" /></a>
             </div>
             <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
                 <ul class="navbar-nav">
                     <!-- Home -->
                     <li class="nav-item">
-                        <a class="nav-link" href="home.php">
+                        <a class="nav-link" href="../index.php">
                             <span class="menu-title">Home</span>
                         </a>
                     </li>
@@ -191,9 +255,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
                         </div>
                     </div>
 
+                    <!-- Service Repetition Summary Section -->
                     <div class="row row-center">
                         <div class="col-md-12 col-center grid-margin">
-                            <p>Cancellation can be made at least 24 hours before the service appointment. For any inquiry, please contact 012-3456789</p>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h4 class="card-title">Your Service Patterns</h4>
+                                    <?php if (!empty($serviceFrequency)): ?>
+                                        <div class="row">
+                                            <?php if (!empty($serviceFrequency)): ?>
+                                                <div class="col-md-12">
+                                                    <ul class="list-star">
+                                                        <?php foreach ($serviceFrequency as $service => $count): ?>
+                                                            <li>
+                                                                <strong><?= htmlspecialchars($service) ?>:</strong>
+                                                                <?= $count ?> time<?= $count > 1 ? 's' : '' ?>
+                                                                <?php if (isset($serviceIntervals[$service])): ?>
+                                                                    <small class="text-muted">(every ~<?= round($serviceIntervals[$service]) ?> days on average)</small>
+                                                                <?php endif; ?>
+                                                            </li>
+                                                        <?php endforeach; ?>
+                                                    </ul>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <p>No service patterns detected yet. Your future patterns will appear here.</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row row-center">
+                        <div class="col-md-12 col-center grid-margin">
+                            <p>Cancellation can be made at least 24 hours before the service appointment. For any inquiry, please contact 019-9545506</p>
                         </div>
 
                         <!-- Filtering -->
@@ -262,6 +358,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
 
                     <?php foreach ($bookings as $index => $booking): ?>
                         <?php
+                                    // Determine if this booking has repeated services/house type
+                                    $repeatedServices = [];
+                                    if (!empty($booking['services'])) {
+                                        $services = explode(', ', $booking['services']);
+                                        foreach ($services as $service) {
+                                            if (isset($serviceFrequency[$service]) && $serviceFrequency[$service] > 1) {
+                                                $repeatedServices[] = $service;
+                                            }
+                                        }
+                                    }
+
                                     // Determine text class for status
                                     $statusClass = '';
                                     if ($booking['status'] == 'Completed') {
@@ -403,8 +510,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
                                                     <div class="form-group row">
                                                         <label class="col-sm-3 col-form-label">Cleaners</label>
                                                         <div class="input-group col-sm-9">
-                                                            <input type="text" class="form-control col-sm-2" value="<?= htmlspecialchars($booking['no_of_cleaners']) ?>" readonly>
-                                                            <input type="text" class="form-control" value="<?= htmlspecialchars($booking['cleaners'] ?? '') ?>" readonly>
+                                                            <!-- <input type="text" class="form-control col-sm-2" value="<?= htmlspecialchars($booking['no_of_cleaners']) ?>" readonly> -->
+                                                            <?php if (!empty($booking['cleaners']) && !empty($booking['cleaner_images'])):
+                                                                $cleaners = explode(', ', $booking['cleaners']);
+                                                                $cleaner_ids = explode(',', $booking['cleaner_ids']);
+                                                                $cleaner_images = explode(',', $booking['cleaner_images']);
+                                                            ?>
+                                                                <div class="cleaner-images">
+                                                                    <?php foreach ($cleaners as $index => $cleaner): ?>
+                                                                        <div class="cleaner-image-container">
+                                                                            <?php if (!empty($cleaner_images[$index])): ?>
+                                                                                <img src="../media/<?= htmlspecialchars(trim($cleaner_images[$index])) ?>"
+                                                                                    alt="<?= htmlspecialchars($cleaner) ?>"
+                                                                                    class="cleaner-image"
+                                                                                    onerror="this.src='../images/default-profile.jpg'">
+                                                                            <?php else: ?>
+                                                                                <img src="../images/default-profile.jpg"
+                                                                                    alt="<?= htmlspecialchars($cleaner) ?>"
+                                                                                    class="cleaner-image">
+                                                                            <?php endif; ?>
+                                                                            <div class="cleaner-name"><?= htmlspecialchars($cleaner) ?></div>
+                                                                        </div>
+                                                                    <?php endforeach; ?>
+                                                                </div>
+                                                            <?php else: ?>
+                                                                <input type="text" class="form-control" value="Not assigned yet" readonly>
+                                                            <?php endif; ?>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -555,7 +686,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
             </div>
         </div>
         </div>
-        <footer class="footer"></footer>
+        <footer class="footer">
+            <a style="color: white;" href="../staff/login.php">For Staff</a>
+        </footer>
     </div>
     </div>
     </div>
@@ -602,6 +735,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
             document.forms[0].submit();
         }
 
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default image for any broken images
+            document.querySelectorAll('.cleaner-image').forEach(img => {
+                img.onerror = function() {
+                    this.src = '../images/default-profile.jpg';
+                };
+            });
+        });
+
         function toggleCollapse(element) {
             // Check if the click target is inside the form or star rating
             if (event.target.closest('form') || event.target.closest('.star-rating') || event.target.closest('.receipt')) {
@@ -637,7 +779,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking'])) {
                 <div class="receipt-container">
                     <div class="text-center mb-4">
                         <h3>HygieiaHub Cleaning Service</h3>
-                        <p>Phone: 012-3456789 | Email: info@hygieiahub.com</p>
+                        <p>Phone: 019-9545506 | Email: info@hygieiahub.com</p>
                     </div><hr>
             
                     <div class="row">

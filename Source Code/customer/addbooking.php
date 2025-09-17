@@ -34,13 +34,13 @@ while ($row = $result->fetch_assoc()) {
         <!-- Header -->
         <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
             <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
-                <a class="navbar-brand brand-logo mr-1" href="home.php"><img src="..\images\HygieaHub logo.png" class="mr-1" alt="HygieiaHub logo" /></a>
+                <a class="navbar-brand brand-logo mr-1" href="../index.php"><img src="..\images\HygieaHub logo.png" class="mr-1" alt="HygieiaHub logo" /></a>
             </div>
             <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
                 <ul class="navbar-nav">
                     <!-- Home -->
                     <li class="nav-item">
-                        <a class="nav-link" href="home.php">
+                        <a class="nav-link" href="../index.php">
                             <span class="menu-title">Home</span>
                         </a>
                     </li>
@@ -166,30 +166,38 @@ while ($row = $result->fetch_assoc()) {
                                             </div>
 
                                             <div class="row">
-                                                <?php
-                                                $address = $_SESSION['address'] . ', ' . $_SESSION['city'] . ', ' . $_SESSION['state'];
-                                                ?>
                                                 <!-- Address -->
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label for="Address">Address<span class="text-danger"> *</span></label>
-                                                        <input type="text" class="form-control" name="Address" id="Address" value="<?php echo $address; ?>" readonly>
+                                                        <select class="form-control" name="AddressSelect" id="AddressSelect" required>
+                                                            <option value="" disabled selected>Select an address</option>
+                                                            <?php
+                                                            // Fetch user's addresses
+                                                            $address_stmt = $conn->prepare("SELECT * FROM customer_addresses WHERE customer_id = ? ORDER BY is_default DESC");
+                                                            $address_stmt->bind_param("i", $_SESSION['customer_id']);
+                                                            $address_stmt->execute();
+                                                            $addresses = $address_stmt->get_result();
+
+                                                            while ($address = $addresses->fetch_assoc()) {
+                                                                $full_address = $address['address'] . ', ' . $address['city'] . ', ' . $address['state'];
+                                                                $selected = ($address['is_default']) ? 'selected' : '';
+                                                                echo '<option value="' . $address['address_id'] . '" data-house="' . $address['house_id'] . '" data-city="' . $address['city'] . '" ' . $selected . '>'
+                                                                    . htmlspecialchars($address['address_label'] . ': ' . $full_address) . '</option>';
+                                                            }
+                                                            ?>
+                                                        </select>
                                                     </div>
                                                 </div>
-                                                <input type="hidden" name="City" id="City" value="<?php echo $_SESSION['city']; ?>">
+                                                <input type="hidden" name="City" id="City">
+                                                <input type="hidden" name="HouseType" id="HouseType">
 
                                                 <!-- House Type -->
                                                 <div class="col-md-6">
                                                     <div class="form-group">
-                                                        <label for="HouseType">House Type<span class="text-danger"> *</span></label>
-                                                        <input type="text" class="form-control" value="<?php
-                                                                                                        $stmt = $conn->prepare("SELECT name FROM HOUSE_TYPE WHERE house_id = ?");
-                                                                                                        $stmt->bind_param("i", $_SESSION['house_id']);
-                                                                                                        $stmt->execute();
-                                                                                                        $result = $stmt->get_result();
-                                                                                                        echo $result->fetch_assoc()['name'];
-                                                                                                        ?>" readonly>
-                                                        <input type="hidden" name="HouseType" id="HouseType" value="<?php echo $_SESSION['house_id']; ?>">
+                                                        <label for="HouseTypeDisplay">House Type<span class="text-danger"> *</span></label>
+                                                        <input type="text" class="form-control" id="HouseTypeDisplay" value="" readonly>
+                                                        <input type="hidden" name="HouseType" id="HouseType" value="">
                                                     </div>
                                                 </div>
                                             </div>
@@ -247,7 +255,7 @@ while ($row = $result->fetch_assoc()) {
                                 <div class="col-md-4 grid-margin">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h4 class="card-title">Services</h4>
+                                            <h4 class="card-title">Additional Services</h4>
                                             <div id="additional-services">
                                                 <?php
                                                 include('../dbconnection.php');
@@ -320,7 +328,7 @@ while ($row = $result->fetch_assoc()) {
                                             <ul>
                                                 <li class="text-muted"><small class="form-text text-muted">Pay via Cash on Delivery (COD)</small></li>
                                                 <li class="text-muted"><small class="form-text text-muted">Cancellation of booking can be made at least 24 hours before the scheduled date and time.</small></li>
-                                                <li class="text-muted"><small class="form-text text-muted">Please contact +6012-3456789 for any inquiry.</small></li>
+                                                <li class="text-muted"><small class="form-text text-muted">Please contact +6019-9545506 for any inquiry.</small></li>
                                             </ul>
                                         </div>
                                         <div class="modal-footer">
@@ -345,7 +353,9 @@ while ($row = $result->fetch_assoc()) {
                     }
                     ?>
                 </div>
-                <footer class="footer"></footer>
+                <footer class="footer">
+                    <a style="color: white;" href="../staff/login.php">For Staff</a>
+                </footer>
             </div>
         </div>
     </div>
@@ -360,6 +370,68 @@ while ($row = $result->fetch_assoc()) {
             serviceTaxRate: 0.06,
             maxDuration: 8
         };
+
+        // Handle address selection changes
+        document.getElementById('AddressSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const houseId = selectedOption.dataset.house;
+            const city = selectedOption.dataset.city;
+
+            // Update hidden fields
+            document.getElementById('HouseType').value = houseId;
+            document.getElementById('City').value = city; // This is critical for cleaner availability
+
+            // Update house type display
+            document.getElementById('HouseTypeDisplay').value = houseTypes[houseId].name;
+
+            // Recalculate and update
+            updateBasePrice();
+            updateCleanerOptions(); // Update cleaners when address changes
+        });
+
+        // Function to update house type display
+        function updateHouseTypeDisplay(houseId) {
+            const houseType = houseTypes[houseId];
+            if (houseType) {
+                document.getElementById('HouseTypeDisplay').value = houseType.name;
+                document.getElementById('HouseType').value = houseId;
+
+                // Update minimum hours if needed
+                document.getElementById('HoursBooked').min = houseType.min_hours;
+                if (parseFloat(document.getElementById('HoursBooked').value) < houseType.min_hours) {
+                    document.getElementById('HoursBooked').value = houseType.min_hours;
+                }
+
+                // Recalculate base price
+                updateBasePrice();
+            }
+        }
+
+        // Initialize house type on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial house type from first address (if available)
+            const addressSelect = document.getElementById('AddressSelect');
+            if (addressSelect && addressSelect.options.length > 1) {
+                const selectedOption = addressSelect.options[addressSelect.selectedIndex];
+                const initialHouseId = selectedOption.dataset.house;
+                const initialCity = selectedOption.dataset.city;
+
+                document.getElementById('HouseType').value = initialHouseId;
+                document.getElementById('City').value = initialCity;
+                document.getElementById('HouseTypeDisplay').value = houseTypes[initialHouseId].name;
+
+                // Set initial hours
+                document.getElementById('HoursBooked').min = houseTypes[initialHouseId].min_hours;
+                document.getElementById('HoursBooked').value = houseTypes[initialHouseId].min_hours;
+                updateBasePrice();
+            }
+
+            // Update when address changes
+            addressSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                updateHouseTypeDisplay(selectedOption.dataset.house);
+            });
+        });
 
         // House types from PHP
         const houseTypes = <?php echo json_encode($houseTypes); ?>;
@@ -438,7 +510,7 @@ while ($row = $result->fetch_assoc()) {
             // Clear existing options
             select.disabled = true;
 
-            if (!date || !time) {
+            if (!date || !time || !city) {
                 select.innerHTML = '<option value="" disabled selected>Select date and time first</option>';
                 return;
             } else {
@@ -448,6 +520,13 @@ while ($row = $result->fetch_assoc()) {
             try {
                 const totalDuration = calculateTotalDuration();
                 const response = await checkAvailability(date, time, city, totalDuration);
+
+                // Handle error response
+                if (!response.success) {
+                    select.innerHTML = '<option value="" disabled selected>Error: ' + response.error + '</option>';
+                    return;
+                }
+
                 const availableCleaners = response.available;
                 select.innerHTML = '<option value="" disabled selected>Select cleaners</option>';
 
@@ -457,35 +536,59 @@ while ($row = $result->fetch_assoc()) {
                     return;
                 }
 
-                // Case 2: Cleaners available - just show options 1 through available cleaners
+                // Case 2: Cleaners available
                 select.disabled = false;
                 for (let i = 1; i <= availableCleaners; i++) {
                     const option = document.createElement('option');
                     option.value = i;
-                    option.textContent = i;
+                    option.textContent = i + (i === 1 ? ' cleaner' : ' cleaners');
                     select.appendChild(option);
                 }
             } catch (error) {
                 console.error('Error checking availability:', error);
-                select.innerHTML = '<option value="" disabled selected>Error checking availability</option>'
+                select.innerHTML = '<option value="" disabled selected>Error checking availability</option>';
             }
         }
 
         // Check cleaner availability
         async function checkAvailability(date, time, city, estimatedDuration) {
-            const response = await fetch('dbconnection/checkavailability.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    date,
-                    time,
-                    city,
-                    estimatedDuration
-                })
-            });
-            return response.json();
+            try {
+                const response = await fetch('dbconnection/checkavailability.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        date,
+                        time,
+                        city,
+                        estimatedDuration
+                    })
+                });
+
+                // First check if response is OK
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Try to parse as JSON
+                const data = await response.json();
+
+                // Check if the response indicates success
+                if (!data.success) {
+                    throw new Error(data.error || 'Unknown server error');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Error checking availability:', error);
+                // Return a safe default instead of throwing
+                return {
+                    success: false,
+                    available: 0,
+                    error: error.message
+                };
+            }
         }
 
         // Handle date selection
@@ -504,10 +607,18 @@ while ($row = $result->fetch_assoc()) {
             const selectedDate = new Date(dateInput.value);
             selectedDate.setHours(0, 0, 0, 0); // Reset time part to midnight
 
-            // Reset time selection if invalid date
+            // Calculate one month from today
+            const oneMonthFromNow = new Date();
+            oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+            oneMonthFromNow.setHours(0, 0, 0, 0);
 
+            // Check if date is within allowed range (1 day to 1 month in advance)
             if (selectedDate <= today) {
                 alert("Bookings must be made at least 1 day in advance and in the future.");
+                dateInput.value = '';
+                return;
+            } else if (selectedDate > oneMonthFromNow) {
+                alert("Bookings cannot be made more than one month in advance.");
                 dateInput.value = '';
                 return;
             }
@@ -596,11 +707,14 @@ while ($row = $result->fetch_assoc()) {
                 day: 'numeric'
             });
 
+            const addressSelect = document.getElementById('AddressSelect');
+            const selectedAddressText = addressSelect.options[addressSelect.selectedIndex].text.split(': ')[1];
+
             // Show detailed invoice in modal
             document.getElementById('bookingDetails').innerHTML = `
                 <strong>Booking Date:</strong> ${formattedDate}<br>
                 <strong>Time:</strong> ${document.getElementById('Time').value}<br>
-                <strong>Address:</strong> ${document.getElementById('Address').value}<hr>`;
+                <strong>Address:</strong> ${selectedAddressText}<hr>`;
 
             // Generate the invoice table
             let additionalServicesDetails = '';

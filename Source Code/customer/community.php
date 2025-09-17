@@ -14,15 +14,17 @@ $feedback_query = "SELECT
                     f.comment, 
                     f.submitted_at,
                     c.name as customer_name,
-                    c.city as customer_city,
+                    a.city as customer_city,
                     h.name as house_type,
                     b.scheduled_date,
                     b.no_of_cleaners,
+                    a.address_label,
                     GROUP_CONCAT(DISTINCT asv.name SEPARATOR ', ') AS services
                    FROM FEEDBACK f
                    JOIN BOOKING b ON f.booking_id = b.booking_id
                    JOIN CUSTOMER c ON b.customer_id = c.customer_id
-                   JOIN HOUSE_TYPE h ON b.house_id = h.house_id
+                   JOIN customer_addresses a ON b.address_id = a.address_id
+                   JOIN HOUSE_TYPE h ON a.house_id = h.house_id
                    LEFT JOIN BOOKING_SERVICE bs ON b.booking_id = bs.booking_id
                    LEFT JOIN ADDITIONAL_SERVICE asv ON bs.service_id = asv.service_id
                    GROUP BY f.feedback_id
@@ -90,13 +92,13 @@ $feedbacks = $feedback_result->fetch_all(MYSQLI_ASSOC);
         <!-- Header -->
         <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
             <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
-                <a class="navbar-brand brand-logo mr-1" href="home.php"><img src="..\images\HygieaHub logo.png" class="mr-1" alt="HygieiaHub logo" /></a>
+                <a class="navbar-brand brand-logo mr-1" href="../index.php"><img src="..\images\HygieaHub logo.png" class="mr-1" alt="HygieiaHub logo" /></a>
             </div>
             <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
                 <ul class="navbar-nav">
                     <!-- Home -->
                     <li class="nav-item">
-                        <a class="nav-link" href="home.php">
+                        <a class="nav-link" href="../index.php">
                             <span class="menu-title">Home</span>
                         </a>
                     </li>
@@ -270,7 +272,9 @@ $feedbacks = $feedback_result->fetch_all(MYSQLI_ASSOC);
                 </div>
             </div>
         </div>
-        <footer class="footer"></footer>
+        <footer class="footer">
+            <a style="color: white;" href="../staff/login.php">For Staff</a>
+        </footer>
     </div>
 
     <!-- javascript files -->
