@@ -53,3 +53,12 @@ Initially deployed in a local environment using XAMPP, followed by simulation on
 This project’s interface design was inspired by the **Skydash Admin Template** by BootstrapDash.  
 All visual components were customized to suit the operational needs of HygieiaHub.  
 Skydash is licensed under [MIT License](https://github.com/BootstrapDash/skydash-html-template/blob/main/LICENSE).
+
+---
+
+## 📄 Academic Report Access  
+The full academic report for HygieiaHub is available via Google Drive.  
+Access is restricted to protect academic integrity and privacy.  
+🔗 [Request Access to Report](https://drive.google.com/file/d/1vjhRTK0r2JeKHcbv0p1LIU04I-6xLbYC/view?usp=sharing)
+
+Prospective employers or academic reviewers may request permission to view the document.
