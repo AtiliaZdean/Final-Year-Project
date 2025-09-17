@@ -53,4 +53,3 @@ Initially deployed in a local environment using XAMPP, followed by simulation on
 This project’s interface design was inspired by the **Skydash Admin Template** by BootstrapDash.  
 All visual components were customized to suit the operational needs of HygieiaHub.  
 Skydash is licensed under [MIT License](https://github.com/BootstrapDash/skydash-html-template/blob/main/LICENSE).
-Would you like a Malay version of this README as well, or perhaps a version formatted for academic appendix inclusion? I can also help you write installation instructions or contributor guidelines if you plan to share the repo publicly.
