@@ -11,7 +11,7 @@ if (!isset($_SESSION['staff_id'])) {
 // Define database credentials
 $dbUser  = 'root';
 $dbName = 'hygieiahub';
-$backupDir = 'C:\xampp\htdocs\MyPHPSite\HygieiaHub\backup';
+$backupDir = 'C:\xampp\htdocs\MyPHPSite\PSM_B032210369\backup';
 
 // Handle backup request
 if (isset($_POST['Backup'])) {
@@ -164,8 +164,10 @@ $backupFiles = array_diff(scandir($backupDir), array('..', '.'));
                         </a>
                         <div class="collapse" id="report">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="report.php">Sales</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="feedback.php">Feedback</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="salesreport.php">Sales</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="feedbackreport.php">Feedback</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="staffreport.php">Staff Performance</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="servicereport.php">Service Utilization</a></li>
                             </ul>
                         </div>
                     </li>

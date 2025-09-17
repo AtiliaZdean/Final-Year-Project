@@ -24,6 +24,11 @@ if (!isset($_SESSION['staff_id'])) {
     <link rel="stylesheet" href="../vendors/css/vendor.bundle.base.css">
     <link rel="stylesheet" href="../css/vertical-layout-light/style.css">
     <link rel="shortcut icon" href="../images/favicon.png" />
+
+    <!-- Spesified external -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- ADD THIS LINE -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </head>
 
 <body>
@@ -122,8 +127,10 @@ if (!isset($_SESSION['staff_id'])) {
                         </a>
                         <div class="collapse" id="report">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="report.php">Sales</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="feedback.php">Feedback</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="salesreport.php">Sales</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="feedbackreport.php">Feedback</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="staffreport.php">Staff Performance</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="servicereport.php">Service Utilization</a></li>
                             </ul>
                         </div>
                     </li>
@@ -260,6 +267,8 @@ if (!isset($_SESSION['staff_id'])) {
                                                 echo "<tr><td colspan='10'>" . $result->num_rows . " rows returned</td></tr>";
                                                 if ($result->num_rows > 0) {
                                                     while ($row = $result->fetch_assoc()) {
+                                                        error_log("Booking ID: " . $row['booking_id'] . " Cleaners: " . $row['cleaners']);
+
                                                         // Determine row class based on status
                                                         $rowClass = ($row['status'] == 'Attention') ? 'table-danger' : '';
 
@@ -457,6 +466,25 @@ if (!isset($_SESSION['staff_id'])) {
                                                     <div class="input-group col-sm-9">
                                                         <input type="text" class="form-control col-sm-2" name="NoOfCleaners" id="NoOfCleaners" readonly>
                                                         <input type="text" class="form-control" id="Cleaners" readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                            </div>
+
+                                            <!-- Cleaners -->
+                                            <div class="col-md-6">
+                                                <div class="form-group row">
+                                                    <label class="col-sm-3 col-form-label">Reassign Cleaners</label>
+                                                    <div class="col-sm-9">
+                                                        <select class="form-control select2" name="NewCleaners[]" id="NewCleaners" multiple disabled>
+                                                            <!-- Options will be loaded dynamically -->
+                                                        </select>
+                                                        <small class="text-muted">Hold Ctrl to select multiple cleaners</small><br>
+                                                        <small class="text-muted" id="availabilityStatus"></small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -705,6 +733,13 @@ if (!isset($_SESSION['staff_id'])) {
 
             const statusSelect = document.getElementById('StatusModal');
 
+            // Enable/disable reassignment based on status
+            if (status === 'Pending') {
+                checkCleanerAvailability(bookingId, scheduledDate, scheduledTime, estimatedDuration);
+            } else {
+                $('#NewCleaners').prop('disabled', true);
+                $('#availabilityStatus').text('Cleaner reassignment only available for Pending bookings');
+            }
             // If current time is before end time, disable "Completed" option
             if (currentTime < endTime) {
                 Array.from(statusSelect.options).forEach(option => {
@@ -741,6 +776,91 @@ if (!isset($_SESSION['staff_id'])) {
 
             $('#bookingModal').modal('show');
         }
+
+        function checkCleanerAvailability(bookingId, date, time, duration) {
+            $.ajax({
+                url: '../customer/dbconnection/checkavailability.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    date: date,
+                    time: time,
+                    city: '<?php echo $_SESSION["branch"]; ?>',
+                    estimatedDuration: duration
+                }),
+                success: function(response) {
+                    console.log("Response from server:", response);
+                    // jQuery automatically parses JSON, so use response directly
+                    if (response.available > 0) {
+                        loadAvailableCleaners(bookingId, date, time, duration);
+                        $('#availabilityStatus').html('<span class="text-success">' + response.available + ' cleaners available</span>');
+                    } else {
+                        $('#NewCleaners').prop('disabled', true);
+                        $('#availabilityStatus').html('<span class="text-danger">No cleaners available for this timeslot</span>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX Error:", status, error);
+                    $('#availabilityStatus').html('<span class="text-danger">Error checking availability</span>');
+                }
+            });
+        }
+
+        function loadAvailableCleaners(bookingId, date, time, duration) {
+            $.ajax({
+                url: 'dbconnection/getavailablecleaners.php',
+                type: 'POST',
+                dataType: 'json', // ← Add this to expect JSON
+                data: {
+                    bookingId: bookingId,
+                    date: date,
+                    time: time,
+                    duration: duration,
+                    city: '<?php echo $_SESSION["branch"]; ?>'
+                },
+                success: function(response) {
+                    console.log("Available Cleaners Response:", response);
+                    // jQuery automatically parses JSON, so use response directly
+                    if (response.cleaners && response.cleaners.length > 0) {
+                        response.cleaners.forEach(function(cleaner) {
+                            var option = new Option(
+                                cleaner.name + (cleaner.is_current ? ' (currently assigned)' : ''),
+                                cleaner.staff_id,
+                                false,
+                                cleaner.is_current
+                            );
+                            $('#NewCleaners').append(option);
+                        });
+
+
+                        // Get the IDs of currently assigned cleaners
+                        var currentCleanerIds = response.cleaners.filter(c => c.is_current).map(c => c.staff_id);
+
+
+                        // Set the selected values
+                        $('#NewCleaners').val(currentCleanerIds).trigger('change');
+                        $('#NewCleaners').prop('disabled', false);
+
+
+                        // Update availability status
+                        var availableCount = response.cleaners.length;
+                        $('#availabilityStatus').html('<span class="text-success">' + availableCount + ' cleaner' + (availableCount !== 1 ? 's' : '') + ' available</span>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX Error:", status, error);
+                    $('#availabilityStatus').html('<span class="text-danger">Error loading cleaners</span>');
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            $('.select2').select2({
+                placeholder: "Select cleaners",
+                width: '100%',
+                dropdownParent: $('#bookingModal')
+            });
+        });
 
         // Action confirmation popup
         function confirmAction(event) {

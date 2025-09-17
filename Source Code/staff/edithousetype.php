@@ -141,8 +141,10 @@ if ($result->num_rows > 0) {
                         </a>
                         <div class="collapse" id="report">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="report.php">Sales</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="feedback.php">Feedback</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="salesreport.php">Sales</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="feedbackreport.php">Feedback</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="staffreport.php">Staff Performance</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="servicereport.php">Service Utilization</a></li>
                             </ul>
                         </div>
                     </li>

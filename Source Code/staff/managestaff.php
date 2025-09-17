@@ -122,8 +122,10 @@ if (!isset($_SESSION['staff_id'])) {
                         </a>
                         <div class="collapse" id="report">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="report.php">Sales</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="feedback.php">Feedback</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="salesreport.php">Sales</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="feedbackreport.php">Feedback</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="staffreport.php">Staff Performance</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="servicereport.php">Service Utilization</a></li>
                             </ul>
                         </div>
                     </li>
@@ -264,7 +266,7 @@ if (!isset($_SESSION['staff_id'])) {
                                 <div class="modal-body">
                                     <h4 class="modal-title" id="staffModalLabel">Register Staff</h4>
 
-                                    <form class="pt-3" id="staffForm" method="POST" action="dbconnection/dbmanagestaff.php" onsubmit="return confirmAction(event)">
+                                    <form class="pt-3" id="staffForm" method="POST" action="dbconnection/dbmanagestaff.php" enctype="multipart/form-data" onsubmit="return confirmAction(event)">
                                         <input type="hidden" name="StaffId" id="StaffId" value="">
 
                                         <!-- Role -->
@@ -343,6 +345,16 @@ if (!isset($_SESSION['staff_id'])) {
                                             </select>
                                         </div>
 
+                                        <!-- Profile picture -->
+                                        <div class="form-group" id="imageUploadGroup">
+                                            <label for="StaffImage">Cleaner Photo</label>
+                                            <input type="file" class="form-control-file" name="StaffImage" id="StaffImage" accept="image/*">
+                                            <small class="form-text text-muted">Only for cleaners. Max size 2MB. Allowed formats: JPG, PNG.</small>
+                                            <div id="imagePreview" class="mt-2" style="display: none;">
+                                                <img id="previewImage" src="#" alt="Preview" style="max-height: 150px; max-width: 150px;">
+                                            </div>
+                                        </div>
+
                                         <!-- Latest Update Information -->
                                         <div class="row mb-3">
                                             <div class="col-md-12">
@@ -368,13 +380,19 @@ if (!isset($_SESSION['staff_id'])) {
     <script>
         // Reset all filter dropdowns to their default state
         function resetFilters() {
-            document.getElementById('Role').selectedIndex = 0;
+            // document.getElementById('Role').selectedIndex = 0;
             document.getElementById('Status').selectedIndex = 0;
 
             document.forms[0].submit();
         }
 
         $('#staffModal').on('hidden.bs.modal', function() {
+            // Clear file input
+            document.getElementById('StaffImage').value = '';
+            // Clear preview
+            document.getElementById('previewImage').src = '#';
+            document.getElementById('imagePreview').style.display = 'none';
+
             // Clear any focused elements when modal closes
             if (document.activeElement) {
                 document.activeElement.blur();
@@ -392,14 +410,28 @@ if (!isset($_SESSION['staff_id'])) {
             return `${day}-${month}-${year} ${hours}:${minutes}`;
         }
 
+        // Add this to your existing JavaScript section
+        function toggleImageUpload() {
+            const role = document.getElementById('Role1').value;
+            const imageUploadGroup = document.getElementById('imageUploadGroup');
+
+            if (role === 'Cleaner') {
+                imageUploadGroup.style.display = 'block';
+            } else {
+                imageUploadGroup.style.display = 'none';
+            }
+        }
+
         function toggleAdminFields() {
             const roleSelect = document.getElementById('Role1');
             const emailGroup = document.getElementById('emailGroup');
             const passwordGroup = document.getElementById('passwordGroup');
+            const imageUploadGroup = document.getElementById('imageUploadGroup');
 
             if (roleSelect.value === 'Admin') {
                 emailGroup.style.display = 'block';
                 passwordGroup.style.display = 'block';
+                imageUploadGroup.style.display = 'none';
                 // Make fields required for Admin
                 document.getElementById('Email').required = true;
                 document.getElementById('Password').required = true;
@@ -409,8 +441,29 @@ if (!isset($_SESSION['staff_id'])) {
                 // Remove required attribute for non-Admin roles
                 document.getElementById('Email').required = false;
                 document.getElementById('Password').required = false;
+                toggleImageUpload();
             }
         }
+
+        // Add image preview functionality
+        document.getElementById('StaffImage').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('previewImage');
+            const previewDiv = document.getElementById('imagePreview');
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    previewDiv.style.display = 'block';
+                }
+
+                reader.readAsDataURL(file);
+            } else {
+                previewDiv.style.display = 'none';
+            }
+        });
 
         function openModal(action, id = '', name = '', phone = '', branch = '', role = '', status = '', lastUpdateTime = '', lastUpdatedBy = '') {
             const modalTitle = document.getElementById('staffModalLabel');
@@ -454,6 +507,29 @@ if (!isset($_SESSION['staff_id'])) {
                 const statusSelect = document.getElementById('StatusModal');
                 statusSelect.value = status;
 
+                // Clear previous image preview first
+                document.getElementById('previewImage').src = '#';
+                document.getElementById('imagePreview').style.display = 'none';
+
+                if (role === 'Cleaner') {
+                    fetch('dbconnection/getcleanerimage.php?staff_id=' + id + '&t=' + new Date().getTime())
+                        .then(response => response.json())
+                        .then(data => {
+                            const preview = document.getElementById('previewImage');
+                            const previewDiv = document.getElementById('imagePreview');
+                            if (data.image_path) {
+                                preview.src = '../media/' + data.image_path + '?t=' + new Date().getTime();
+                                previewDiv.style.display = 'block';
+                            } else {
+                                previewDiv.style.display = 'none';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching image:', error);
+                            document.getElementById('imagePreview').style.display = 'none';
+                        });
+                }
+
                 if (lastUpdatedBy && lastUpdateTime) {
                     const formattedTime = formatDateTime(lastUpdateTime);
                     $('#latestUpdate').text(`Latest update by ${lastUpdatedBy} at ${formattedTime}`);
@@ -482,6 +558,10 @@ if (!isset($_SESSION['staff_id'])) {
                 roleSelect.value = '';
                 const branchText = document.getElementById('Branch1');
                 branchText.value = "<?php echo $_SESSION['branch']; ?>";
+
+                // Hide image preview for new registration
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('imageUploadGroup').style.display = 'none';
             }
 
             // Show the modal
