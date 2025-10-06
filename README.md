@@ -51,8 +51,7 @@ Initially deployed in a local environment using XAMPP, followed by simulation on
 
 ## 🎨 UI Design Credit  
 This project’s interface design was inspired by the **Skydash Admin Template** by BootstrapDash.  
-All visual components were customized to suit the operational needs of HygieiaHub.  
-Skydash is licensed under [MIT License](https://github.com/BootstrapDash/skydash-html-template/blob/main/LICENSE).
+All visual components were customized to suit the operational needs of HygieiaHub.
 
 ---
 
